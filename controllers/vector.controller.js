@@ -18,6 +18,15 @@ const Joi = require('joi');
 const createModel = async (req, res) => {
     try {
         const { modelName } = req.params;
+
+        // Validation for modelName
+        const modelNameRegex = /^[a-zA-Z_]+$/;
+        if (!modelNameRegex.test(modelName)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid modelName. Only lowercase, uppercase, and underscore characters are allowed.'
+            });
+        }
         const user = await Model.create({
             name: modelName,
             user_id: req.user.userId
@@ -42,6 +51,13 @@ const createModel = async (req, res) => {
 const deleteModel = async (req, res) => {
     try {
         const { modelId } = req.params;
+        // Validation for modelId
+        if (!modelId || typeof modelId !== 'string') {
+            return res.status(400).json({
+            status: 'error',
+            message: 'Invalid modelId. It should be a non-empty string.'
+            });
+        }
         const userId = req.user.userId;
         const deletedModel = await Model.destroy({
             where: {
@@ -73,6 +89,28 @@ const deleteModel = async (req, res) => {
 const trainModel = async (req, res) => {
     try {
         const { modelId, documentation, trainingDataType } = req.body;
+
+        // Validation for documentation
+        if (!documentation || typeof documentation !== 'string') {
+            return res.status(400).json({
+            status: 'error',
+            message: 'Invalid documentation. It should be a non-empty string.'
+            });
+        }
+
+        // Validation for trainingDataType
+        if (!trainingDataType || typeof trainingDataType !== 'string') {
+            return res.status(400).json({
+            status: 'error',
+            message: 'Invalid trainingDataType. It should be a non-empty string.'
+            });
+        }
+        if (!modelId || typeof modelId !== 'string') {
+            return res.status(400).json({
+            status: 'error',
+            message: 'Invalid modelId. It should be a non-empty string.'
+            });
+        }
         const userId = req.user.userId
         const isSQL = trainingDataType === 'SQL'
         let docForSQL = []
@@ -102,13 +140,28 @@ const ask = async (req, res) => {
     try {
         const { modelId, question } = req.query;
         const userId = req.user.userId;
+        // Validation for question
+        if (!question || typeof question !== 'string') {
+            return res.status(400).json({
+            status: 'error',
+            message: 'Invalid question. It should be a non-empty string.'
+            });
+        }
+        
+
+        if (!modelId || typeof modelId !== 'string') {
+            return res.status(400).json({
+            status: 'error',
+            message: 'Invalid modelId. It should be a non-empty string.'
+            });
+        }
 
         const relatedSchema = await similaritySearch(question, 10, modelId, userId, "SCHEMA");
         const relatedRelations = await similaritySearch(question, 2, modelId, userId, "RELATIONS");
         const relatedSql = await similaritySearch(question, 8, modelId, userId, "SQL");
 
-        const mergedSchema = relatedSchema.map(obj => obj.content).join(' ___________________');
-        const mergedRelations = relatedRelations.map(obj => obj.content).join('___________________ ');
+        const mergedSchema = relatedSchema.map(obj => obj.content).join(' ');
+        const mergedRelations = relatedRelations.map(obj => obj.content).join(' ');
 
         const mergedSql = relatedSql && relatedSql.length > 0 ? relatedSql.slice(0, relatedSql.length > 3 ? 3 : relatedSql.length).map(obj => `\nReference Question:  ${obj.question}\nReference Answer: ${obj.content}`).join(' ') : '';
 

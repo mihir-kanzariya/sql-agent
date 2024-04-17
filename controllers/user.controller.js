@@ -45,7 +45,8 @@ const callbackGoogleAuth = async (req, res) => {
                 name: profile.name,
                 email: profile.email,
                 google_id: profile.id,
-                picture: profile.picture
+                picture: profile.picture,
+                disable: false
             });
         }
 
@@ -58,6 +59,53 @@ const callbackGoogleAuth = async (req, res) => {
         res.status(500).send('Authentication failed');
     }
 }
+
+const registerUser = async (req, res) => {
+    const { email, password } = req.body;
+
+    // Validate email and password
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    if (!email.includes('@')) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    if (password.trim() === '') {
+        return res.status(400).json({ message: 'Password cannot be empty' });
+    }
+
+    // Rest of the code...
+
+    try {
+        // Check if user with the same email already exists
+        const existingUser = await User.findOne({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User with this email already exists' });
+        }
+
+        // Hash the password
+        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+        // Create the user
+        const user = await User.create({
+            name: email?.split("@")[0] ,
+            email,
+            password: hashedPassword,
+            // other user properties
+        });
+
+        // Send verification email
+
+        // ... code to send verification email ...
+
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+        console.error('Error registering user:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 const generateApiKey = async (req, res) => {
     try {
@@ -78,12 +126,15 @@ const generateApiKey = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 }
+// See i want very simple one UI, which make your job easy and fit my budget. 
+
 
 
 
 module.exports = {
     googleAuth,
     callbackGoogleAuth,
-    generateApiKey
+    generateApiKey,
+    registerUser
 };
 

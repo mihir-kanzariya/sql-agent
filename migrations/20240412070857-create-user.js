@@ -39,6 +39,14 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
+      geography: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      disable: {
+        type: Sequelize.BOOLEAN,
+        allowNull: true
+      },
       lastLoggedinDate: {
         type: Sequelize.DATE,
         allowNull: true
