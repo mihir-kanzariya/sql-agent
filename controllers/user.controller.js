@@ -99,13 +99,48 @@ const registerUser = async (req, res) => {
         // Send verification email
 
         // ... code to send verification email ...
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(201).json({ message: 'User registered successfully' });
+        res.status(201).json({ token, user, message: 'User registered successfully' });
     } catch (error) {
         console.error('Error registering user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+const loginUser = async (req, res) => {
+    const { email, password } = req.body;
+    // Validate email and password
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+    if (!email.includes('@')) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+    if (password.trim() === '') {
+        return res.status(400).json({ message: 'Password cannot be empty' });
+    }
+    try {
+        // Find the user by email
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Verify the password
+        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+        if (user.password !== hashedPassword) {
+            return res.status(401).json({ message: 'Invalid password' });
+        }
+        // Generate JWT
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token, user });
+    } catch (error) {
+        console.error('Error logging in:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
 
 const generateApiKey = async (req, res) => {
     try {
@@ -135,6 +170,7 @@ module.exports = {
     googleAuth,
     callbackGoogleAuth,
     generateApiKey,
-    registerUser
+    registerUser,
+    loginUser
 };
 
