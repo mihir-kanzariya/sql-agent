@@ -3,20 +3,29 @@ const router = require('./routes/index.js');
 const { testDBConnection } = require('./helper/sequelize.js');
 const { generateEmbeddings } = require('./vectordb/supabase.js');
 const { encode } = require('gpt-3-encoder');
+const cors = require('cors');
+
+
+
 
 // Your code here
 
 
 require('dotenv').config();
 const app = express();
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH'],
+    credentials: true // Allow cookies to be sent from the client
+  }));
 app.use(express.json());
 // Allow all cross-origin requests
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    next();
-});
+// app.use((req, res, next) => {
+//     res.setHeader('Access-Control-Allow-Origin', '*');
+//     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+//     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+//     next();
+// });
 
 
 
