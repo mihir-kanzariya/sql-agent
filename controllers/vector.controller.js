@@ -103,7 +103,7 @@ const deleteModel = async (req, res) => {
 
 const trainModel = async (req, res) => {
     try {
-        const { modelId, documentation, trainingDataType } = req.body;
+        const { modelName, documentation, trainingDataType } = req.body;
 
         // Validation for documentation
         // if (!Array.isArray(Array.from(documentation)) || !Array.from(documentation).every(doc => typeof doc === 'string')) {
@@ -120,12 +120,32 @@ const trainModel = async (req, res) => {
             message: 'Invalid trainingDataType. It should be a non-empty string.'
             });
         }
-        if (!modelId || typeof modelId !== 'string') {
+        if (!modelName || typeof modelName !== 'string') {
             return res.status(400).json({
             status: 'error',
             message: 'Invalid modelId. It should be a non-empty string.'
             });
         }
+
+        const model = await Model.findOne({
+            where: {
+                name: modelName,
+                user_id: userId
+            }
+        });
+
+        if (!model) {
+            return res.status(404).json({
+                status: 'error',
+                message: `Model with name ${modelName} not found.`
+            });
+        }
+
+        const modelId = model.id;
+
+
+
+
         const userId = req.user.id
         const isSQL = trainingDataType === 'SQL'
         let docForSQL = []
