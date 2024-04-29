@@ -10,11 +10,10 @@ const crypto = require('crypto');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/google/callback';
+const GOOGLE_REDIRECT_URI = `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
 
 // Redirect user to Google's OAuth 2.0 server
-
-const googleAuth = (req, res) => {
+let googleAuth = (req, res) => {
     console.log("🚀 ~ User:", JSON.stringify(User, null, 2))
     console.log("🚀 ~ User:", User.findOne)
     const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile`;

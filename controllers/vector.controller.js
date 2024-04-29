@@ -27,9 +27,24 @@ const createModel = async (req, res) => {
                 message: 'Invalid modelName. Only lowercase, uppercase, and underscore characters are allowed.'
             });
         }
+
+        const existingModel = await Model.findOne({
+            where: {
+                name: modelName,
+                user_id: req.user.id
+            }
+        });
+
+        if (existingModel) {
+            return res.status(400).json({
+                status: 'error',
+                message: `Model with name ${modelName} already exists for this user.`
+            });
+        }
+
         const user = await Model.create({
             name: modelName,
-            user_id: req.user.userId
+            user_id: req.user.id
         });
         // await createWeaviateClass(modelName);
         res.json({
@@ -91,12 +106,12 @@ const trainModel = async (req, res) => {
         const { modelId, documentation, trainingDataType } = req.body;
 
         // Validation for documentation
-        if (!documentation || typeof documentation !== 'string') {
-            return res.status(400).json({
-            status: 'error',
-            message: 'Invalid documentation. It should be a non-empty string.'
-            });
-        }
+        // if (!Array.isArray(Array.from(documentation)) || !Array.from(documentation).every(doc => typeof doc === 'string')) {
+        //     return res.status(400).json({
+        //     status: 'error',
+        //     message: 'Invalid documentation. It should be an array of strings.'
+        //     });
+        // }
 
         // Validation for trainingDataType
         if (!trainingDataType || typeof trainingDataType !== 'string') {
@@ -111,7 +126,7 @@ const trainModel = async (req, res) => {
             message: 'Invalid modelId. It should be a non-empty string.'
             });
         }
-        const userId = req.user.userId
+        const userId = req.user.id
         const isSQL = trainingDataType === 'SQL'
         let docForSQL = []
         if (isSQL) {
@@ -138,8 +153,8 @@ const trainModel = async (req, res) => {
 
 const ask = async (req, res) => {
     try {
-        const { modelId, question } = req.query;
-        const userId = req.user.userId;
+        const { modelName, question } = req.query;
+        const userId = req.user.id;
         // Validation for question
         if (!question || typeof question !== 'string') {
             return res.status(400).json({
@@ -149,12 +164,28 @@ const ask = async (req, res) => {
         }
         
 
-        if (!modelId || typeof modelId !== 'string') {
+        if (!modelName || typeof modelName !== 'string') {
             return res.status(400).json({
             status: 'error',
             message: 'Invalid modelId. It should be a non-empty string.'
             });
         }
+
+        const model = await Model.findOne({
+            where: {
+                name: modelName,
+                user_id: userId
+            }
+        });
+
+        if (!model) {
+            return res.status(404).json({
+                status: 'error',
+                message: `Model with name ${modelName} not found.`
+            });
+        }
+
+        const modelId = model.id;
 
         const relatedSchema = await similaritySearch(question, 10, modelId, userId, "SCHEMA");
         const relatedRelations = await similaritySearch(question, 2, modelId, userId, "RELATIONS");
