@@ -223,7 +223,12 @@ const ask = async (req, res) => {
         const messages = createChatMessages(SysPrompt, question, relatedSql);
         const sql = await generateSQL(SysPrompt, messages);
 
-        res.send(sql);
+        res.status(200).json({
+            status: 'Success',
+            data: { sql },
+            message: `SQL generated successfully for question: ${question}`
+        });
+        // res.send(sql);
     } catch (error) {
         console.error(error);
         res.status(500).json({

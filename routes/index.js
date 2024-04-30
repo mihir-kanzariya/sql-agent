@@ -36,6 +36,7 @@ router.get('/ask',verifyApiKey, ask);
 
 // Train Model endpoint
 router.post('/train-model',verifyApiKey, trainModel);
+router.post('/fine-tune',verifyApiKey, trainModel);
 
 // List All Models endpoint
 
