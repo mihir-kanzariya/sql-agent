@@ -28,10 +28,11 @@ const createModel = async (req, res) => {
             });
         }
 
+        console.log("🚀 ~ createModel ~ req.user:", req.user)
         const existingModel = await Model.findOne({
             where: {
                 name: modelName,
-                user_id: req.user.id
+                user_id: req.user.userId
             }
         });
 
@@ -44,7 +45,7 @@ const createModel = async (req, res) => {
 
         const user = await Model.create({
             name: modelName,
-            user_id: req.user.id
+            user_id: req.user.userId
         });
         // await createWeaviateClass(modelName);
         res.json({
@@ -113,6 +114,7 @@ const trainModel = async (req, res) => {
         //     });
         // }
 
+       
         // Validation for trainingDataType
         if (!trainingDataType || typeof trainingDataType !== 'string') {
             return res.status(400).json({
@@ -126,6 +128,7 @@ const trainModel = async (req, res) => {
             message: 'Invalid modelId. It should be a non-empty string.'
             });
         }
+        const userId = req.user.id
 
         const model = await Model.findOne({
             where: {
@@ -146,7 +149,7 @@ const trainModel = async (req, res) => {
 
 
 
-        const userId = req.user.id
+        
         const isSQL = trainingDataType === 'SQL'
         let docForSQL = []
         if (isSQL) {
