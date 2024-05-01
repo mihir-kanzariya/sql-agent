@@ -25,7 +25,7 @@ router.post('/create-model/:modelName', verifyToken, createModel);
 // router.post('/create-model/:userId/:modelName',verifyToken, createModel);
 router.delete('/delete-model/:modelId',verifyToken, deleteModel);
 router.get('/list-all-models',verifyToken, listAllModels);
-router.get('/reset-training-data/:modelId',verifyToken, resetTrainingData);
+router.delete('/reset-training-data/:modelId',verifyToken, resetTrainingData);
 
 
 
