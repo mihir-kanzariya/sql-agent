@@ -16,7 +16,7 @@ const app = express();
 app.use(cors({
     origin: '*', // Allow all origins
     methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH', 'OPTIONS'],
-    credentials: true // Allow cookies to be sent from the client
+    // credentials: true // Allow cookies to be sent from the client
   }));
 app.use(express.json());
 // Allow all cross-origin requests
