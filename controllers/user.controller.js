@@ -20,7 +20,7 @@ let googleAuth = (req, res) => {
     console.log("🚀 ~ User:", JSON.stringify(User, null, 2))
     console.log("🚀 ~ User:", User.findOne)
     const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile`;
-    res.redirect(url);
+    return res.redirect(url);
 }
 
 const callbackGoogleAuth = async (req, res) => {
@@ -66,10 +66,10 @@ const callbackGoogleAuth = async (req, res) => {
         // Generate JWT
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ token, user });
+        return res.json({ token, user });
     } catch (error) {
         console.error(error);
-        res.status(500).send('Authentication failed');
+        return res.status(500).send('Authentication failed');
     }
 }
 
@@ -116,10 +116,10 @@ const registerUser = async (req, res) => {
         // ... code to send verification email ...
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(201).json({ token, user, message: 'User registered successfully' });
+        return res.status(201).json({ token, user, message: 'User registered successfully' });
     } catch (error) {
         console.error('Error registering user:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -153,10 +153,10 @@ const loginUser = async (req, res) => {
 
         // Generate JWT
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token, user });
+        return res.json({ token, user });
     } catch (error) {
         console.error('Error logging in:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
 };
 
@@ -175,10 +175,10 @@ const generateApiKey = async (req, res) => {
         user.apiKey = apiKey; // Update the user's API key
         await user.save();
         
-        res.status(200).json({ message: 'API Key generated successfully', apiKey: apiKey });
+        return res.status(200).json({ message: 'API Key generated successfully', apiKey: apiKey });
     } catch (error) {
         console.error('Error updating API key:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error' });
     }
 }
 // See i want very simple one UI, which make your job easy and fit my budget. 

@@ -16,7 +16,7 @@ const getByUserId = async (req, res) => {
         // Write proper response when necessary
 
         
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `ApiKey fetched successfully.`,
             data: apiKeys
@@ -36,7 +36,7 @@ function sleep(ms) {
 // Controller to create a new API key
 const createApiKey = async (req, res) => {
     
-    await sleep(10000)
+    // await sleep(10000)
     try {
         const userId = req.user.userId;
         
@@ -51,7 +51,7 @@ const createApiKey = async (req, res) => {
         const savedApiKey = await newApiKey.save();
         
         // Write proper response when necessary
-        res.status(201).json({
+        return res.status(201).json({
             status: 'success',
             message: 'API key created successfully.',
             data: savedApiKey
@@ -80,7 +80,7 @@ const getByApiKeyId = async (req, res) => {
 
         // Write proper response when necessary
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `ApiKey fetched successfully.`,
             data: apiKey
@@ -108,7 +108,7 @@ const findAllByUserId = async (req, res) => {
 
         // Write proper response when necessary
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `ApiKey fetched successfully.`,
             data: apiKey
@@ -135,7 +135,7 @@ const deleteByApiKeyId = async (req, res) => {
 
         // Write proper response when necessary
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `Apikey: ${apikey_id} deleted successfully.`,
             // data: apiKey
@@ -163,7 +163,7 @@ const updateByApiKeyId = async (req, res) => {
 
         // Write proper response when necessary
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `APIkey: ${apikey_id} updated successfully.`,
             data: updatedApiKey

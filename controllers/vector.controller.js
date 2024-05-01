@@ -50,19 +50,15 @@ const createModel = async (req, res) => {
             user_id: req.user.userId
         });
         // await createWeaviateClass(modelName);
-        res.json({
+        return res.json({
             status: 'success',
             message: `Model: ${modelName} created successfully.`,
             data: user
         });
-        res.json({
-            status: 'success',
-            message: `Model: ${modelName} created successfully.`,
-            data: user
-        });
+        
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Error creating vector class.',
             error: error.message
@@ -94,13 +90,13 @@ const deleteModel = async (req, res) => {
                 message: `Model with ID ${modelId} not found.`
             });
         }
-        res.json({
+        return res.json({
             status: 'success',
             message: `Model with ID ${modelId} deleted successfully.`
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Error deleting model.',
             error: error.message
@@ -166,13 +162,13 @@ const trainModel = async (req, res) => {
         let chunks = await createChunk((isSQL ? docForSQL : documentation), isSQL)
         await generateEmbeddings(chunks, modelId, userId, trainingDataType, documentation)
         
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: `Vector record created successfully in model: ${documentation}.`
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Error creating vector record.',
             error: error.message
@@ -230,7 +226,7 @@ const ask = async (req, res) => {
         const messages = createChatMessages(SysPrompt, question, relatedSql);
         const sql = await generateSQL(SysPrompt, messages);
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'Success',
             data: { sql },
             message: `SQL generated successfully for question: ${question}`
@@ -238,7 +234,7 @@ const ask = async (req, res) => {
         
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Error retrieving similar items.',
             error: error.message
@@ -273,10 +269,10 @@ const listAllModels = async (req, res) => {
         }
             
 
-        res.json(result);
+        return res.json(result);
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Error listing all models.',
             error: error.message
@@ -320,7 +316,7 @@ const resetTrainingData = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'error',
             message: 'Error in deleting Training data.',
             error: error.message
