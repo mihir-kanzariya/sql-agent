@@ -2,24 +2,31 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('finetunes', {
+    await queryInterface.createTable('ApiKeys', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      user: {
+      name: {
         type: Sequelize.STRING
       },
-      assistant: {
-        type: Sequelize.STRING
+      key: {
+        type: Sequelize.STRING,
+        unique: true
       },
       user_id: {
         type: Sequelize.INTEGER
       },
-      model_id: {
-        type: Sequelize.INTEGER
+      createdAt: {
+        type: Sequelize.DATE
+      },
+      updatedAt: {
+        type: Sequelize.DATE
+      },
+      deletedAt: {
+        type: Sequelize.DATE
       },
       createdAt: {
         allowNull: false,
@@ -32,6 +39,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('finetunes');
+    await queryInterface.dropTable('ApiKeys');
   }
 };

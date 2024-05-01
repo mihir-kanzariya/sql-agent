@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class finetune extends Model {
+  class ApiKey extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -13,14 +13,16 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
     }
   }
-  finetune.init({
-    user: DataTypes.STRING,
-    assistant: DataTypes.STRING,
+  ApiKey.init({
+    name: DataTypes.STRING,
+    key: { type: DataTypes.STRING, unique: true },
     user_id: DataTypes.INTEGER,
-    model_id: DataTypes.INTEGER
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
+    deletedAt: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'finetune',
+    modelName: 'ApiKey',
   });
-  return finetune;
+  return ApiKey;
 };

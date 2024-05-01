@@ -50,9 +50,6 @@ module.exports = (sequelize, DataTypes) => {
         lastLoggedinDate: {
             type: DataTypes.DATE
         },
-        apiKey: {
-            type: DataTypes.STRING
-        },
         geography: {
             type: DataTypes.STRING,
             allowNull: true,

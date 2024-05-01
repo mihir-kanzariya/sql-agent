@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { ApiKey } = require('../models'); // adjust path as needed
 
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
@@ -10,7 +11,7 @@ const crypto = require('crypto');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
+const GOOGLE_REDIRECT_URI = process.env.NODE_ENV == 'development' ? `http://localhost:3000/auth/google/callback` : `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
 
 // Redirect user to Google's OAuth 2.0 server
 let googleAuth = (req, res) => {
@@ -21,7 +22,7 @@ let googleAuth = (req, res) => {
 }
 
 const callbackGoogleAuth = async (req, res) => {
-    const { code } = req.query;
+    const { code, geography } = req.query;
     try {
         // Exchange code for tokens
         const { data: { id_token, access_token } } = await axios.post('https://oauth2.googleapis.com/token', {
@@ -45,9 +46,20 @@ const callbackGoogleAuth = async (req, res) => {
                 email: profile.email,
                 google_id: profile.id,
                 picture: profile.picture,
-                disable: false
+                disable: false,
+                geography: geography || 'US',
+                lastLoggedInDate: new Date()
             });
         }
+        
+        
+        // below statment is not working
+        let aa = await User.update({ lastLoggedInDate: new Date() }, {
+            where: { id: user.id }
+        });
+        
+        console.log("updating last login date", aa)
+        delete user.dataValues.password; // Remove password from the user object
 
         // Generate JWT
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -60,7 +72,7 @@ const callbackGoogleAuth = async (req, res) => {
 }
 
 const registerUser = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, geography } = req.body;
 
     // Validate email and password
     if (!email || !password) {
@@ -92,6 +104,8 @@ const registerUser = async (req, res) => {
             name: email?.split("@")[0] ,
             email,
             password: hashedPassword,
+            geography: geography || 'US'
+             // default geography
             // other user properties
         });
 
@@ -130,6 +144,11 @@ const loginUser = async (req, res) => {
         if (user.password !== hashedPassword) {
             return res.status(401).json({ message: 'Invalid password' });
         }
+
+        // Update lastLoggedInDate
+        user.lastLoggedInDate = new Date();
+        await user.save();
+
         // Generate JWT
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ token, user });
@@ -153,7 +172,7 @@ const generateApiKey = async (req, res) => {
 
         user.apiKey = apiKey; // Update the user's API key
         await user.save();
-
+        
         res.status(200).json({ message: 'API Key generated successfully', apiKey: apiKey });
     } catch (error) {
         console.error('Error updating API key:', error);

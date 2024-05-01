@@ -55,6 +55,11 @@ const createModel = async (req, res) => {
             message: `Model: ${modelName} created successfully.`,
             data: user
         });
+        res.json({
+            status: 'success',
+            message: `Model: ${modelName} created successfully.`,
+            data: user
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({
@@ -310,6 +315,8 @@ const resetTrainingData = async (req, res) => {
             status: 'success',
             message: 'Training data deleted successfully.'
         });
+
+        
 
     } catch (error) {
         console.error(error);
