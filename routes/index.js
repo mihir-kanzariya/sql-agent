@@ -21,7 +21,7 @@ router.post('/register', registerUser );
 router.post('/login', loginUser );
 
 
-router.post('/create-model/:userId/:modelName', verifyToken, createModel);
+router.post('/create-model/:modelName', verifyToken, createModel);
 // router.post('/create-model/:userId/:modelName',verifyToken, createModel);
 router.delete('/delete-model/:modelId',verifyToken, deleteModel);
 router.get('/list-all-models',verifyToken, listAllModels);
