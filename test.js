@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const HOST = 'http://localhost:3000'; // Replace with your API host
+const HOST = 'http://localhost:8000'; // Replace with your API host
 
 let arr = [
 `TableName: Account,
@@ -816,26 +816,30 @@ console.log(array);
 let type = ['SCHEMA','RELATIONS', 'SQL', 'FINETUNE']
 let test = ['Testing azure openai']
 async function makeApiRequests(arr) {
-    arr.forEach(async (ele, i) => {
+    // arr.forEach(async (ele, i) => {
         // let i = 0
         try {
-            console.log("...", relarr.length)
-            const response = await axios.post(`${HOST}/train-model`, {
-                "documentation": ele,
-                "modelId": 1,
-                "userId": 1,
-                "trainingDataType":type[i]
+            console.log("...", arr.length)
+            const response = await axios.post(`${HOST}/api/v1/train-model`, {
+                "documentation": arr,
+                "modelName": "sampleModel",
+                "trainingDataType":type[0]
                 // // "trainingDataType": "RELATIONS"
                 // "trainingDataType": "SQL"
+            }, {
+                headers: {
+                    "x-api-key": "3fdce849ecf90acb90e32f6776ea2c80b0f5c676"
+                }
             });
+            console.log("🚀 ~ //arr.forEach ~ response:", response)
         } catch (error) {
             console.log("🚀 ~ makeApiRequests ~ error:", error)
             
         }
 
-    })
+    // })
     console.log("DONE")
 }
 
- makeApiRequests([arr, relarr, array]);
+ makeApiRequests(arr);
 

@@ -7,6 +7,8 @@
 const { generateEmbeddings, similaritySearch, generateSQL } = require('../vectordb/supabase.js');
 const { createChunk } = require('../helper/helper.js');
 
+const { supabaseClient } = require('../vectordb/supabaseClient.js');
+
 const { generateSQLPrompt, createChatMessages } = require('../prompt/index.js');
 
 const { Model } = require('../models'); // adjust path as needed
@@ -243,10 +245,30 @@ const listAllModels = async (req, res) => {
     try {
         const models = await Model.findAll({
             where: {
-                user_id: req.user.userId
+            user_id: req.user.userId
             }
         });
-        res.json(models);
+        let result = [];
+        for (let i = 0; i < models.length; i++) {
+            const model = models[i];
+            console.log("-------------")
+            console.log("🚀 ~ listAllModels ~ model:", model)
+            console.log("🚀 ~ listAllModels ~ req.user.userId:", req.user.userId)
+            console.log("🚀 ~ listAllModels ~  model.dataValues.id:",  model.dataValues.id)
+            const { data, error } = await supabaseClient
+            .from('chatgpt')
+            .select('')
+            .eq('user_id', req.user.userId)
+            .eq('model_id', model.dataValues.id);
+            console.log("🚀 ~ listAllModels ~ error:", error)
+            
+            console.log("🚀 ~ listAllModels ~ data:", data)
+            model.dataValues.count =data ? data.length : 0;
+            result.push(model)
+        }
+            
+
+        res.json(result);
     } catch (error) {
         console.error(error);
         res.status(500).json({
@@ -273,8 +295,8 @@ const resetTrainingData = async (req, res) => {
         const { data: deletedData, error: deleteError } = await supabaseClient
             .from('chatgpt')
             .delete()
-            .eq('modelId', modelId)
-            .eq('userId', userId);
+            .eq('model_id', modelId)
+            .eq('user_id', userId);
 
         if (deleteError) {
             console.error("Supabase delete error:", deleteError);
