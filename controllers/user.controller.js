@@ -13,7 +13,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI = process.env.NODE_ENV == 'development' ? `http://localhost:3000/auth/google/callback` : `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
 
-console.log("🚀 ~ NODE_ENV:", NODE_ENV)
+console.log("🚀 ~ NODE_ENV:", process.env.NODE_ENV)
 console.log("🚀 ~ GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI)
 // Redirect user to Google's OAuth 2.0 server
 let googleAuth = (req, res) => {
