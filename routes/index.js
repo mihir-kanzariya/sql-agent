@@ -1,7 +1,7 @@
 const express = require('express');
 
 const { callbackGoogleAuth, googleAuth, generateApiKey, registerUser, loginUser } = require('../controllers/user.controller.js');
-const { createModel, deleteModel, trainModel, ask, listAllModels } = require('../controllers/vector.controller.js');
+const { createModel, deleteModel, trainModel, ask, listAllModels, resetTrainingData } = require('../controllers/vector.controller.js');
 const {verifyToken} = require('../middleware/authMiddleware.js'); // adjust the path as necessary
 const {verifyApiKey} = require('../middleware/verifyApiKey.js'); // adjust the path as necessary
 const { createModelSchema } = require('../controllers/validator.js');
@@ -25,6 +25,7 @@ router.post('/create-model/:modelName', verifyToken, createModel);
 // router.post('/create-model/:userId/:modelName',verifyToken, createModel);
 router.delete('/delete-model/:modelId',verifyToken, deleteModel);
 router.get('/list-all-models',verifyToken, listAllModels);
+router.get('/reset-training-data/:modelId',verifyToken, resetTrainingData);
 
 
 

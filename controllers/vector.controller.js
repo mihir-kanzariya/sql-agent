@@ -228,7 +228,7 @@ const ask = async (req, res) => {
             data: { sql },
             message: `SQL generated successfully for question: ${question}`
         });
-        // res.send(sql);
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({
@@ -258,12 +258,54 @@ const listAllModels = async (req, res) => {
 };
 
 
+const resetTrainingData = async (req, res) => {
+    const { modelId } = req.params;
+      // Validation for modelId
+      if (!modelId || typeof modelId !== 'string') {
+        return res.status(400).json({
+        status: 'error',
+        message: 'Invalid modelId. It should be a non-empty string.'
+        });
+    }
+    const userId = req.user.userId;
+    
+    try {
+        const { data: deletedData, error: deleteError } = await supabaseClient
+            .from('chatgpt')
+            .delete()
+            .eq('modelId', modelId)
+            .eq('userId', userId);
+
+        if (deleteError) {
+            console.error("Supabase delete error:", deleteError);
+            return res.status(500).json({
+            status: 'error',
+            message: 'Error deleting training data.',
+            error: deleteError.message
+            });
+        }
+        return res.status(200).json({
+            status: 'success',
+            message: 'Training data deleted successfully.'
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error in deleting Training data.',
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
     createModel,
     deleteModel,
     trainModel,
     ask,
-    listAllModels
+    listAllModels,
+    resetTrainingData
 };
 
