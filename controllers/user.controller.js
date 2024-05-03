@@ -3,7 +3,7 @@ const { ApiKey } = require('../models'); // adjust path as needed
 
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models'); // adjust path as needed
+const { User, Model } = require('../models'); // adjust path as needed
 // const { generateKey } = require('crypto');
 const crypto = require('crypto');
 
@@ -43,6 +43,7 @@ const callbackGoogleAuth = async (req, res) => {
         // Check if user exists in DB or create a new one
         let user = await User.findOne({ where: { google_id: profile.id } });
         if (!user) {
+            console.log("Creating new user...")
             user = await User.create({
                 name: profile.name,
                 email: profile.email,
@@ -52,6 +53,12 @@ const callbackGoogleAuth = async (req, res) => {
                 geography: geography || 'US',
                 lastLoggedInDate: new Date()
             });
+
+           let model =  await Model.create({
+                name: 'default_opensql',
+                user_id: user.id
+            });
+           console.log("🚀 ~ callbackGoogleAuth ~ model:", model)
         }
         
         
@@ -64,7 +71,7 @@ const callbackGoogleAuth = async (req, res) => {
         delete user.dataValues.password; // Remove password from the user object
 
         // Generate JWT
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '6h' });
 
         return res.json({ token, user });
     } catch (error) {
@@ -111,10 +118,15 @@ const registerUser = async (req, res) => {
             // other user properties
         });
 
+        await Model.create({
+            name: 'default_opensql',
+            user_id: user.id
+        });
+
         // Send verification email
 
         // ... code to send verification email ...
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '6h' });
 
         return res.status(201).json({ token, user, message: 'User registered successfully' });
     } catch (error) {
@@ -152,7 +164,7 @@ const loginUser = async (req, res) => {
         await user.save();
 
         // Generate JWT
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '6h' });
         return res.json({ token, user });
     } catch (error) {
         console.error('Error logging in:', error);
@@ -182,7 +194,34 @@ const generateApiKey = async (req, res) => {
     }
 }
 // See i want very simple one UI, which make your job easy and fit my budget. 
-
+const verifyMail = async (req, res) => {
+    const { email } = req.body;
+    // Validate email
+    if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+    }
+    if (!email.includes('@')) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+    try {
+        // Find the user by email
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        // Generate verification token
+        const verificationToken = crypto.randomBytes(20).toString('hex');
+        user.verificationToken = verificationToken;
+        await user.save();
+        // Send verification email with the verification link
+        const verificationLink = `${process.env.BASE_URL}/verify?token=${verificationToken}`;
+        // ... code to send verification email with the verificationLink ...
+        return res.status(200).json({ message: 'Verification email sent successfully' });
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 
 

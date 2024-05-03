@@ -43,6 +43,14 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
+      verificationToken: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      verified: {
+        type: Sequelize.BOOLEAN,
+        allowNull: true
+      },
       disable: {
         type: Sequelize.BOOLEAN,
         allowNull: true

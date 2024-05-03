@@ -24,7 +24,7 @@ Properties: Status, Type, SuppliedCompany, SuppliedPhone, SuppliedEmail, Supplie
 `TableName: Case,
 Properties: LastViewedDate, Comments, ContactFax, ContactEmail, ContactMobile, ContactPhone, SystemModstamp, LastModifiedDate, CreatedDate, IsEscalated, ClosedDate, IsClosed, Description, Priority, Subject, Origin, Reason`,
 `TableName: Contact,
-Properties: Phone, MobilePhone, Email, Title, Department, CreatedDate, LastModifiedDate, SystemModstamp, LastActivityDate, LastCURequestDate, LastCUUpdateDate, LastViewedDate, LastReferencedDate, EmailBouncedReason, EmailBouncedDate, FirstName, IsEmailBounced, PhotoUrl, Jigsaw, JigsawContactId`,
+Properties: Phone, MobilePhone, Email, Title, Department, CreatedDate, LastModifiedDate, SystemModstamp, LastActivityDate, LastCURequestDate, LastCUupdatedAte, LastViewedDate, LastReferencedDate, EmailBouncedReason, EmailBouncedDate, FirstName, IsEmailBounced, PhotoUrl, Jigsaw, JigsawContactId`,
 `TableName: Contact,
 Properties: LinkedIn_Profile__c, IsBatchRun__c, IsBatchRunForEvents__c, IsBatchRunForContentInteraction__c, IsDeleted, Id, LastModifiedById, rules_applied, confidence_score, bookmark, MasterRecordId, AccountId, ReportsToId, OwnerId, CreatedById, Salutation, MiddleName, Suffix, Name, MailingStreet`,
 `TableName: Contact,

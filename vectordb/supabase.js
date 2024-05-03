@@ -15,7 +15,7 @@ let totalTokens = 0
 
 
 
-async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType, docForSQL) {
+async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType, docForSQL, fileId) {
     try {
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_APIKEY
@@ -46,6 +46,7 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
                 embedding: e.embedding,
                 model_id,
                 user_id,
+                file_id: fileId,
                 training_data_type: trainingDataType
             };
 
@@ -71,7 +72,8 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
 }
 
 
-async function similaritySearch(query, matches, modelId, userId, trainingDataType) {
+async function similaritySearch(query, matches, modelId, userId, trainingDataType,fileId,  dbfuncenv) {
+    console.log("🚀 ~ similaritySearch ~ similaritySearch:", trainingDataType, fileId)
     try {
         const input = query.replace(/\n/g, ' ');
         const embedRes = await axios.post('https://api.openai.com/v1/embeddings', {
@@ -85,7 +87,10 @@ async function similaritySearch(query, matches, modelId, userId, trainingDataTyp
         });
 
         const { embedding } = embedRes.data.data[0];
-        const { data: chunks, error } = await supabaseClient.rpc('chatgpt_search', {
+    console.log("🚀 ~ similaritySearch ~ similaritySearch:", `chatgpt_search_${dbfuncenv}`)
+
+        const { data: chunks, error } = await supabaseClient.rpc(`chatgpt_search_${dbfuncenv}`, {
+            fileid: fileId,
             match_count: matches,
             modelid: modelId,
             query_embedding: embedding,
@@ -93,6 +98,16 @@ async function similaritySearch(query, matches, modelId, userId, trainingDataTyp
             trainingdatatype: trainingDataType,
             userid: userId
         });
+
+        // {
+        //     fileid, 
+        //     match_count, 
+        //     modelid, 
+        //     query_embedding, 
+        //     similarity_threshold, 
+        //     trainingdatatype, 
+        //     userid
+        //   }
 
         if (error) {
             console.error("SUPABSE Error:", JSON.stringify(error));
@@ -115,12 +130,19 @@ async function generateSQL(prompt, messages) {
 
         const requestBody = {
             model: 'gpt-3.5-turbo',
-            messages,
+            messages: [{
+                "role": "system",
+                "content": prompt
+            }, ...messages
+        ],
             temperature: 0.2,
             // stream: true
         };
 
         const response = await openai.chat.completions.create(requestBody);
+        console.log("🚀 ~ generateSQL ~ response:", response)
+        console.log("🚀 ~ generateSQL ~ response.choices[0]:", response.choices[0])
+
         console.log(response.choices[0]?.message.content); // Handle the response data here
         return response.choices[0]?.message.content;
     } catch (error) {
