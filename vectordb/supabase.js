@@ -71,9 +71,7 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
     }
 }
 
-
-async function similaritySearch(query, matches, modelId, userId, trainingDataType,fileId,  dbfuncenv) {
-    console.log("🚀 ~ similaritySearch ~ similaritySearch:", trainingDataType, fileId)
+async function generateEmbeddingsForQuestion(query) {
     try {
         const input = query.replace(/\n/g, ' ');
         const embedRes = await axios.post('https://api.openai.com/v1/embeddings', {
@@ -87,6 +85,27 @@ async function similaritySearch(query, matches, modelId, userId, trainingDataTyp
         });
 
         const { embedding } = embedRes.data.data[0];
+        return embedding
+    } catch (error) {
+        return error;
+    }
+}
+
+async function similaritySearch(embedding, matches, modelId, userId, trainingDataType,fileId,  dbfuncenv) {
+    console.log("🚀 ~ similaritySearch ~ similaritySearch:", trainingDataType, fileId)
+    try {
+        // const input = query.replace(/\n/g, ' ');
+        // const embedRes = await axios.post('https://api.openai.com/v1/embeddings', {
+        //     model: 'text-embedding-ada-002',
+        //     input
+        // }, {
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         Authorization: `Bearer ${process.env.OPENAI_APIKEY}`
+        //     }
+        // });
+
+        // const { embedding } = embedRes.data.data[0];
     console.log("🚀 ~ similaritySearch ~ similaritySearch:", `chatgpt_search_${dbfuncenv}`)
 
         const { data: chunks, error } = await supabaseClient.rpc(`chatgpt_search_${dbfuncenv}`, {
@@ -154,5 +173,6 @@ async function generateSQL(prompt, messages) {
 module.exports = {
     generateEmbeddings,
     similaritySearch,
-    generateSQL
+    generateSQL,
+    generateEmbeddingsForQuestion
 };

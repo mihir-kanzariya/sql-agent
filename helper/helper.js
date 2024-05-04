@@ -1327,8 +1327,8 @@ ALTER TABLE ONLY person.stateprovince
 
         const response = await openai.chat.completions.create(requestBody);
         let content = response.choices[0]?.message.content;
-        console.log("🚀 ~ prepareArrayOfStringForFinetune ~ content:", content)
-        console.log("🚀 ~Type ~ content:", typeof content)
+        // console.log("🚀 ~ prepareArrayOfStringForFinetune ~ content:", content)
+        // console.log("🚀 ~Type ~ content:", typeof content)
         let data = JSON.parse(content);
         console.log(data); // Handle the response data here
         // console.log("Strngfy:",JSON.stringify(response.choices[1]?.message.content)); 

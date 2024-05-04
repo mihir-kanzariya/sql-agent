@@ -4,7 +4,7 @@
 //     createWeaviateRecord,
 //     createWeaviateClass,
 //     deleteSchema} = require('../vectordb/weaviate.js');
-const { generateEmbeddings, similaritySearch, generateSQL } = require('../vectordb/supabase.js');
+const { generateEmbeddings, similaritySearch, generateSQL, generateEmbeddingsForQuestion } = require('../vectordb/supabase.js');
 const { createChunk, prepareArrayOfStringForFinetune, processDataset } = require('../helper/helper.js');
 const axios = require('axios');
 
@@ -208,11 +208,12 @@ const ask = async (req, res) => {
         }
 
         const modelId = model.id;
-
-        const relatedSchema = await similaritySearch(question, 10, modelId, userId, "SCHEMA",null,  'api');
-        const relatedRelations = await similaritySearch(question, 2, modelId, userId, "RELATIONS",null,  'api');
-        const relatedSql = await similaritySearch(question, 8, modelId, userId, "SQL",null, 'api');
-
+        const embeddings = generateEmbeddingsForQuestion(question)
+        const [relatedSchema, relatedRelations, relatedSql] = await Promise.all([
+            similaritySearch(embeddings, 10, modelId, userId, "SCHEMA", fileId, 'ui'),
+            similaritySearch(embeddings, 2, modelId, userId, "RELATIONS", fileId, 'ui'),
+            similaritySearch(embeddings, 8, modelId, userId, "SQL", fileId, 'ui')
+        ]);
         const mergedSchema = relatedSchema.map(obj => obj.content).join(' ');
         const mergedRelations = relatedRelations.map(obj => obj.content).join(' ');
 
@@ -332,7 +333,7 @@ const prepareFileForFineTune = async (req, res) => {
         
         // Make GET request to the presigned URL
         const response = await axios.get(presignedUrl, {timeout: 120000 });
-        console.log(">>>>>", response.data);
+        // console.log(">>>>>", response.data);
         
         // Call function to prepare array of strings for fine-tuning
         let dataset = await prepareArrayOfStringForFinetune(response.data);
@@ -440,10 +441,18 @@ const askMySql = async (req, res) => {
         }
 
         const modelId = model.id;
+        const embeddings = await generateEmbeddingsForQuestion(question)
+        // console.log("🚀 ~ askMySql ~ embeddings:", embeddings)
 
-        const relatedSchema = await similaritySearch(question, 10, modelId, userId, "SCHEMA",fileId, 'ui');
-        const relatedRelations = await similaritySearch(question, 2, modelId, userId, "RELATIONS",fileId, 'ui');
-        const relatedSql = await similaritySearch(question, 8, modelId, userId, "SQL",fileId, 'ui');
+        const [relatedSchema, relatedRelations, relatedSql] = await Promise.all([
+            similaritySearch(embeddings, 10, modelId, userId, "SCHEMA", fileId, 'ui'),
+            similaritySearch(embeddings, 2, modelId, userId, "RELATIONS", fileId, 'ui'),
+            similaritySearch(embeddings, 8, modelId, userId, "SQL", fileId, 'ui')
+        ]);
+        // console.log("🚀 ~ relatedSchema >>>", relatedSchema, )
+        // console.log("🚀 ~ relatedRelations >>>",  relatedRelations)
+        // console.log("🚀 ~ relatedSql >>>",  relatedSql)
+
 
         const mergedSchema = relatedSchema.map(obj => obj.content).join(' ');
         const mergedRelations = relatedRelations.map(obj => obj.content).join(' ');
