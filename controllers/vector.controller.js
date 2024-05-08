@@ -343,12 +343,53 @@ const prepareFileForFineTune = async (req, res) => {
         });
 
         // Make GET request to the presigned URL
+        console.log("reading data from presigned URL")
+        let startTime = new Date();
         const response = await axios.get(presignedUrl, {
             timeout: 120000,       
             responseType: 'text'  // Ensure that the response is treated as plain text
         }); 
+        let EndTime = new Date();
+        var seconds = (EndTime.getTime() - startTime.getTime()) / 1000;
+        console.log("Done: reading data from presigned URL took: ", seconds, " seconds")
+
+
+
 
         let dataset = await prepareArrayOfStringForFinetune(response.data);
+        // let dataset = {
+        //     SCHEMA: [
+        //       'tableName: department, columns: [departmentid, name, groupname, modifieddate]',
+        //       'tableName: employee, columns: [businessentityid, nationalidnumber, loginid, jobtitle, birthdate, maritalstatus, gender, hiredate, salariedflag, vacationhours, sickleavehours, currentflag, rowguid, modifieddate, organizationnode]',
+        //       'tableName: employeedepartmenthistory, columns: [businessentityid, departmentid, shiftid, startdate, enddate, modifieddate]',
+        //       'tableName: employeepayhistory, columns: [businessentityid, ratechangedate, rate, payfrequency, modifieddate]',
+        //       'tableName: jobcandidate, columns: [jobcandidateid, businessentityid, resume, modifieddate]',
+        //       'tableName: shift, columns: [shiftid, name, starttime, endtime, modifieddate]'
+        //     ],
+        //     RELATIONS: [
+        //       'employee has a foreign key to person',
+        //       'employeedepartmenthistory has a foreign key to employee',
+        //       'employeedepartmenthistory has a foreign key to department',
+        //       'employeedepartmenthistory has a foreign key to shift',
+        //       'employeepayhistory has a foreign key to employee',
+        //       'jobcandidate has a foreign key to employee'
+        //     ],
+        //     SQL: [
+        //       {
+        //         question: 'List all employees who are currently active in the organization.',
+        //         SQL: 'SELECT * FROM humanresources.employee WHERE currentflag = true;'
+        //       },
+        //       {
+        //         question: 'Retrieve the job title and department of all employees.',
+        //         SQL: 'SELECT e.jobtitle, d.name AS department FROM humanresources.employee e JOIN humanresources.employeedepartmenthistory edh ON e.businessentityid = edh.businessentityid JOIN humanresources.department d ON edh.departmentid = d.departmentid WHERE edh.enddate IS NULL;'
+        //       },
+        //       {
+        //         question: 'Find the average rate of pay for employees.',
+        //         SQL: 'SELECT AVG(rate) AS average_pay FROM humanresources.employeepayhistory;'
+        //       }
+        //     ]
+        //   }
+          
 
         const model = await Model.findOne({
             where: {
@@ -375,10 +416,11 @@ const prepareFileForFineTune = async (req, res) => {
         }
         
         await Model.update({ active: true }, { where: { fileId, active: false } });
-        
+        // console.log("dataset: dataset", dataset)
         return res.status(200).json({
             status: 'success',
-            message: 'File prepared for fine-tuning.'
+            message: 'File prepared for fine-tuning.',
+            data: dataset?.SQL
         });
     } catch (error) {
         console.error(error);
