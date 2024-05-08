@@ -156,6 +156,7 @@ const trainModel = async (req, res) => {
         }
 
         let chunks = await createChunk((isSQL ? docForSQL : documentation), isSQL)
+        console.log("🚀 ~ trainModel ~ chunks:", chunks)
         await generateEmbeddings(chunks, modelId, userId, trainingDataType, documentation, null)
         
         return res.status(200).json({
@@ -208,11 +209,11 @@ const ask = async (req, res) => {
         }
 
         const modelId = model.id;
-        const embeddings = generateEmbeddingsForQuestion(question)
+        const embeddings = await generateEmbeddingsForQuestion(question)
         const [relatedSchema, relatedRelations, relatedSql] = await Promise.all([
-            similaritySearch(embeddings, 10, modelId, userId, "SCHEMA", fileId, 'ui'),
-            similaritySearch(embeddings, 2, modelId, userId, "RELATIONS", fileId, 'ui'),
-            similaritySearch(embeddings, 8, modelId, userId, "SQL", fileId, 'ui')
+            similaritySearch(embeddings, 10, modelId, userId, "SCHEMA", null, 'api'),
+            similaritySearch(embeddings, 2, modelId, userId, "RELATIONS", null, 'api'),
+            similaritySearch(embeddings, 8, modelId, userId, "SQL", null, 'api')
         ]);
         const mergedSchema = relatedSchema.map(obj => obj.content).join(' ');
         const mergedRelations = relatedRelations.map(obj => obj.content).join(' ');
@@ -327,15 +328,21 @@ const resetTrainingData = async (req, res) => {
 const prepareFileForFineTune = async (req, res) => {    
     try {
         const { presignedUrl, fileId } = req.query;
+        console.log("🚀 ~ prepareFileForFineTune ~ fileId:", fileId)
         console.log("🚀 ~ prepareFileForFineTune ~ presignedUrl:", presignedUrl)
         console.log("🚀 ~ prepareFileForFineTune ~ presignedUrl:", req.query)
         let url = 'https://opensql.s3.us-west-1.wasabisys.com/4/hr-6376a9b4-212b-465f-bc04-a590b742b6e6.sql?AWSAccessKeyId=PB3SF6B4ZHEXUOIAGRRT&Expires=1714869521&Signature=8YfmubBTm5zlRaM1rxAyRg3lc9s%3D'
-        
+        console.log("reading file from url")
         // Make GET request to the presigned URL
-        const response = await axios.get(presignedUrl, {timeout: 120000 });
+        const response = await axios.get(presignedUrl, {
+            timeout: 120000,       
+            responseType: 'text'  // Ensure that the response is treated as plain text
+    });
         // console.log(">>>>>", response.data);
         
         // Call function to prepare array of strings for fine-tuning
+        console.log("prepareArrayOfStringForFinetune")
+
         let dataset = await prepareArrayOfStringForFinetune(response.data);
         // let dataset = {
         //     SCHEMA: [
@@ -371,7 +378,7 @@ const prepareFileForFineTune = async (req, res) => {
         //   }
       
         const userId = req.user.userId
-        console.log("🚀 ~ prepareFileForFineTune ~ userId:", userId)
+        // console.log("🚀 ~ prepareFileForFineTune ~ userId:", userId)
 
         const model = await Model.findOne({
             where: {
@@ -391,6 +398,7 @@ const prepareFileForFineTune = async (req, res) => {
         
 
         try {
+            console.log("processDataset")
             await processDataset(dataset, modelId, userId, fileId);
         } catch (error) {
             console.error('Error:', error);
@@ -449,9 +457,9 @@ const askMySql = async (req, res) => {
             similaritySearch(embeddings, 2, modelId, userId, "RELATIONS", fileId, 'ui'),
             similaritySearch(embeddings, 8, modelId, userId, "SQL", fileId, 'ui')
         ]);
-        // console.log("🚀 ~ relatedSchema >>>", relatedSchema, )
-        // console.log("🚀 ~ relatedRelations >>>",  relatedRelations)
-        // console.log("🚀 ~ relatedSql >>>",  relatedSql)
+        console.log("🚀 ~ relatedSchema >>>", relatedSchema, )
+        console.log("🚀 ~ relatedRelations >>>",  relatedRelations)
+        console.log("🚀 ~ relatedSql >>>",  relatedSql)
 
 
         const mergedSchema = relatedSchema.map(obj => obj.content).join(' ');

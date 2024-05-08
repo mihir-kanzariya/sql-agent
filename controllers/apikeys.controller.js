@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const getByUserId = async (req, res) => {
     try {
         const userId = req.user.userId;
+        console.log("🚀 ~ getByUserId ~ userId:", userId)
 
         const apiKeys = await ApiKey.findAll({ userId });
 
@@ -39,10 +40,11 @@ const createApiKey = async (req, res) => {
     // await sleep(10000)
     try {
         const userId = req.user.userId;
+        console.log("🚀 ~ createApiKey ~ userId:", userId)
         
         // Create a new API key
         const newApiKey = new ApiKey({
-            userId,
+            user_id: userId,
             name: 'Default',
             key: crypto.randomBytes(20).toString('hex')
         });

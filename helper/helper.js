@@ -1,5 +1,8 @@
 const crypto = require('crypto');
-const { encode } = require('gpt-3-encoder');
+// import { getEncoding, encodingForModel } from "js-tiktoken";
+
+
+const { getEncoding } = require('js-tiktoken');
 const fs = require('fs');
 // const axios = require('axios');
 const OpenAI = require('openai');
@@ -8,17 +11,24 @@ const { generateEmbeddings } = require('../vectordb/supabase.js');
 function generateApiKey() {
     return
 }
+let encoding = getEncoding("cl100k_base")
 
 
 async function createChunk(documentation, isSQL) {
-    console.log("🚀 ~ createChunk ~ documentation:", documentation)
+    // console.log("🚀 ~ createChunk ~ documentation:", documentation)
 
-    return documentation.map(ele => {
+    return documentation.map(ele => {   
+        
+        let contentToken =encoding.encode(ele.trim()).length
 
+        console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        console.log("🚀 ~ createChunk ~ ele:", ele)
+        console.log("🚀 ~ createChunk ~ Trimmedele:", ele.trim())
+        console.log("🚀 ~ createChunk ~ contentToken:", contentToken)
         return {
             content: ele,
             content_length: ele.length,
-            content_token: encode(ele.trim()).length,
+            content_tokens:contentToken,
             // trainingDataType
         }
     })
@@ -1357,9 +1367,11 @@ async function processDataset(dataset, modelId, userId, fileId) {
                 if (isSQL) {
                     docForSQL = data.map((doc) => `${doc.question} ${doc.DDL}`)
                 }
-
+                console.log("processDataset  > processDataset")
                 let chunks = await createChunk((isSQL ? docForSQL : data), isSQL)
                 // const chunks = await createChunk(data, false);
+                console.log("processDataset  > generateEmbeddings")
+
                 await generateEmbeddings(chunks, modelId, userId, key, data, fileId);
             } catch (error) {
                 throw error;

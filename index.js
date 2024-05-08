@@ -2,7 +2,7 @@ const express = require('express');
 const router = require('./routes/index.js');
 const { testDBConnection } = require('./helper/sequelize.js');
 const { generateEmbeddings } = require('./vectordb/supabase.js');
-const { encode } = require('gpt-3-encoder');
+
 const cors = require('cors');
 
 
