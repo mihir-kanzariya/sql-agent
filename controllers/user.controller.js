@@ -179,6 +179,7 @@ const generateApiKey = async (req, res) => {
         const apiKey = crypto.randomBytes(20).toString('hex');
         const userId = req.user.userId; // Assuming `req.user` contains the authenticated user's info
         const user = await User.findByPk(userId);
+        console.log("🚀 ~ generateApiKey ~ userId:", userId)
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });

@@ -1,12 +1,9 @@
-// const { 
-//     listAllClasses,
-//     // similaritySearch,
-//     createWeaviateRecord,
-//     createWeaviateClass,
-//     deleteSchema} = require('../vectordb/weaviate.js');
+
 const { generateEmbeddings, similaritySearch, generateSQL, generateEmbeddingsForQuestion } = require('../vectordb/supabase.js');
 const { createChunk, prepareArrayOfStringForFinetune, processDataset } = require('../helper/helper.js');
 const axios = require('axios');
+const AWS = require('aws-sdk');
+
 
 const { supabaseClient } = require('../vectordb/supabaseClient.js');
 
@@ -156,7 +153,7 @@ const trainModel = async (req, res) => {
         }
 
         let chunks = await createChunk((isSQL ? docForSQL : documentation), isSQL)
-        console.log("🚀 ~ trainModel ~ chunks:", chunks)
+        // console.log("🚀 ~ trainModel ~ chunks:", chunks)
         await generateEmbeddings(chunks, modelId, userId, trainingDataType, documentation, null)
         
         return res.status(200).json({
@@ -247,8 +244,8 @@ const listAllModels = async (req, res) => {
             user_id: req.user.userId
             }
         });
-        console.log("🚀 ~ listAllModels ~ models:", models.length)
-        console.log("🚀 ~ listAllModels ~ models:", models[0])
+        // console.log("🚀 ~ listAllModels ~ models:", models.length)
+        // console.log("🚀 ~ listAllModels ~ models:", models[0])
         // delete models[0]
         // let result = [];
         // for (let i = 0; i < models.length; i++) {
@@ -327,58 +324,31 @@ const resetTrainingData = async (req, res) => {
 
 const prepareFileForFineTune = async (req, res) => {    
     try {
-        const { presignedUrl, fileId } = req.query;
-        console.log("🚀 ~ prepareFileForFineTune ~ fileId:", fileId)
-        console.log("🚀 ~ prepareFileForFineTune ~ presignedUrl:", presignedUrl)
-        console.log("🚀 ~ prepareFileForFineTune ~ presignedUrl:", req.query)
-        let url = 'https://opensql.s3.us-west-1.wasabisys.com/4/hr-6376a9b4-212b-465f-bc04-a590b742b6e6.sql?AWSAccessKeyId=PB3SF6B4ZHEXUOIAGRRT&Expires=1714869521&Signature=8YfmubBTm5zlRaM1rxAyRg3lc9s%3D'
-        console.log("reading file from url")
+        const {  key, fileId } = req.query;
+    const userId = req.user.userId; 
+    AWS.config.update({
+        accessKeyId: process.env.WASABI_ACCESS_KEY,
+        region: `us-west-1`,
+        secretAccessKey: process.env.WASABI_SECRET_KEY,
+    });
+
+    const ep = new AWS.Endpoint(process.env.WASABI_ENDPOINT);
+    const s3 = new AWS.S3({ endpoint: ep });
+   
+        // Generate presigned URL with metadata
+        const presignedUrl = s3.getSignedUrl('getObject', {
+            Bucket: `${process.env.WASABI_BUCKET_NAME}`,
+            Key: key,
+            Expires: 100000,
+        });
+
         // Make GET request to the presigned URL
         const response = await axios.get(presignedUrl, {
             timeout: 120000,       
             responseType: 'text'  // Ensure that the response is treated as plain text
-    });
-        // console.log(">>>>>", response.data);
-        
-        // Call function to prepare array of strings for fine-tuning
-        console.log("prepareArrayOfStringForFinetune")
+        }); 
 
         let dataset = await prepareArrayOfStringForFinetune(response.data);
-        // let dataset = {
-        //     SCHEMA: [
-        //       'tableName: department, columns: [departmentid, name, groupname, modifieddate]',
-        //       'tableName: employee, columns: [businessentityid, nationalidnumber, loginid, jobtitle, birthdate, maritalstatus, gender, hiredate, salariedflag, vacationhours, sickleavehours, currentflag, rowguid, modifieddate, organizationnode]',
-        //       'tableName: employeedepartmenthistory, columns: [businessentityid, departmentid, shiftid, startdate, enddate, modifieddate]',
-        //       'tableName: employeepayhistory, columns: [businessentityid, ratechangedate, rate, payfrequency, modifieddate]',
-        //       'tableName: jobcandidate, columns: [jobcandidateid, businessentityid, resume, modifieddate]',
-        //       'tableName: shift, columns: [shiftid, name, starttime, endtime, modifieddate]'
-        //     ],
-        //     RELATIONS: [
-        //       'employee has a foreign key to department',
-        //       'employeedepartmenthistory has a foreign key to department',
-        //       'employeedepartmenthistory has a foreign key to employee',
-        //       'employeedepartmenthistory has a foreign key to shift',
-        //       'employeepayhistory has a foreign key to employee',
-        //       'jobcandidate has a foreign key to employee'
-        //     ],
-        //     SQL: [
-        //       {
-        //         question: 'List all employees who are currently active and their job titles.',
-        //         DDL: 'SELECT p.firstname, p.lastname, e.jobtitle FROM humanresources.employee e JOIN person.person p ON e.businessentityid = p.businessentityid WHERE e.currentflag = true;'
-        //       },
-        //       {
-        //         question: 'Find the departments that have employees with the highest vacation hours.',
-        //         DDL: 'SELECT d.name, SUM(e.vacationhours) AS total_vacation_hours FROM humanresources.employee e JOIN humanresources.employeedepartmenthistory edh ON e.businessentityid = edh.businessentityid JOIN humanresources.department d ON edh.departmentid = d.departmentid GROUP BY d.name ORDER BY total_vacation_hours DESC;'
-        //       },
-        //       {
-        //         question: 'Get the average salary rate for employees hired after a specific date.',
-        //         DDL: "SELECT AVG(ep.rate) AS average_salary_rate FROM humanresources.employeepayhistory ep JOIN humanresources.employee e ON ep.businessentityid = e.businessentityid WHERE e.hiredate > 'SpecificDate';"
-        //       }
-        //     ]
-        //   }
-      
-        const userId = req.user.userId
-        // console.log("🚀 ~ prepareFileForFineTune ~ userId:", userId)
 
         const model = await Model.findOne({
             where: {
@@ -423,7 +393,7 @@ const prepareFileForFineTune = async (req, res) => {
 const askMySql = async (req, res) => {
     try {
         const { question, fileId } = req.query;
-        console.log("🚀 ~ askMySql ~ fileId:", fileId)
+        // console.log("🚀 ~ askMySql ~ fileId:", fileId)
         const userId = req.user.userId
 
         // Validation for question
@@ -457,9 +427,9 @@ const askMySql = async (req, res) => {
             similaritySearch(embeddings, 2, modelId, userId, "RELATIONS", fileId, 'ui'),
             similaritySearch(embeddings, 8, modelId, userId, "SQL", fileId, 'ui')
         ]);
-        console.log("🚀 ~ relatedSchema >>>", relatedSchema, )
-        console.log("🚀 ~ relatedRelations >>>",  relatedRelations)
-        console.log("🚀 ~ relatedSql >>>",  relatedSql)
+        // console.log("🚀 ~ relatedSchema >>>", relatedSchema, )
+        // console.log("🚀 ~ relatedRelations >>>",  relatedRelations)
+        // console.log("🚀 ~ relatedSql >>>",  relatedSql)
 
 
         const mergedSchema = relatedSchema.map(obj => obj.content).join(' ');
