@@ -1479,7 +1479,7 @@ console.log("ENVS: ", process.env.SMTP_PASSWORD)
     }
   };
 const sendVerificationEmail = async (email, token) => {
-    const verificationUrl = `http://localhost:8000/api/v1/verify-email?token=${token}`;
+    const verificationUrl = `https://api.opensql.ai/api/v1/verify-email?token=${token}`;
     // const verificationUrl = `https://api.opensql.ai/api/v1/verify-email?token=${token}`;
     // Use Brevo SDK or API to send the email
     // For example:
