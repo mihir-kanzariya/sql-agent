@@ -23,6 +23,7 @@
     "joi": "^17.12.3",
     "js-tiktoken": "^1.0.11",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.13",
     "openai": "^4.33.1",
     "pg": "^8.11.5",
     "pg-hstore": "^2.3.4",
