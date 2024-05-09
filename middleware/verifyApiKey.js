@@ -27,6 +27,11 @@ async function verifyApiKey(req, res, next) {
             return res.status(401).json({ message: 'Invalid user' });
         }
 
+        console.log("🚀 ~ verifyApiKey ~ user.verified:", user.verified)
+        if (!user.verified) {
+            return res.status(401).json({ message: 'Verify Email.' });
+        }
+
         console.log("🚀 ~ verifyApiKey ~ user:", user)
         delete user.dataValues.password; // Remove password from the user object
         // delete user.dataValues.apiKey; // Remove password from the user object

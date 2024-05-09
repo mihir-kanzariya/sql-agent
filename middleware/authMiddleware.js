@@ -12,7 +12,10 @@ const verifyToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403); // invalid token
-
+    
+        if (!user.verified) {
+            return res.status(423).json({ message: 'Verify Email.', data: [] });
+        }
     req.user = user; // Add the user payload to the request
     if (!req.user) {
         return res.sendStatus(401); // Unauthorized

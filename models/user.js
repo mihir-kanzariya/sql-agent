@@ -47,6 +47,16 @@ module.exports = (sequelize, DataTypes) => {
         role: {
             type: DataTypes.STRING
         },
+        verificationToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        verified: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+        },
+        
+
         lastLoggedinDate: {
             type: DataTypes.DATE
         },

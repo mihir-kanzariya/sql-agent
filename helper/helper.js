@@ -1,6 +1,7 @@
 const crypto = require('crypto');
+const nodemailer = require("nodemailer");
 const axios = require('axios');
-
+const {verifyEmailTemplate}  = require("./verifyEmailTemplate")
 // import { getEncoding, encodingForModel } from "js-tiktoken";
 
 
@@ -1439,9 +1440,67 @@ async function checkForInsertStatements(url) {
     }
 }
 
+const sendEmail = async (body, subject, to) => {
+    try {
+    //   const { body, subject, to } = req.body;
+//   console.log(req.body, "!!!!!!req.body!!!!!!!")
+console.log("ENVS: ", process.env.SMTP_EMAIL)
+console.log("ENVS: ", process.env.SMTP_PASSWORD)
+      const transporter = nodemailer.createTransport({
+        host: "smtp-relay.brevo.com",
+        port: 587,
+        auth: {
+          user: process.env.SMTP_EMAIL,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      });
+  
+      const html = body || "<h1>Test mail</h1>";
+  
+     await transporter.sendMail({
+        from: '"OpenSQL.AI" <no-reply@opensql.ai>',
+        to: to,
+        subject: subject || "pdfgpt.io",
+        html: html,
+      });
+      console.log("EMAIL SENT!!!")
+      return true
+    //   next({
+    //     status: StatusCodes.OK,
+    //     message: "Email has been sent!",
+    //   });
+    } catch (error) {
+        return false
+      console.error(">>>>>",error);
+    //   next({
+    //     status: StatusCodes.INTERNAL_SERVER_ERROR,
+    //     message: "Internal Server Error",
+    //   });
+    }
+  };
+const sendVerificationEmail = async (email, token) => {
+    const verificationUrl = `http://localhost:8000/api/v1/verify-email?token=${token}`;
+    // const verificationUrl = `https://api.opensql.ai/api/v1/verify-email?token=${token}`;
+    // Use Brevo SDK or API to send the email
+    // For example:
+
+    let body = verifyEmailTemplate({link: verificationUrl})
+    console.log("🚀 ~ sendVerificationEmail ~ body:", body)
+    return await sendEmail(body, "Verify your email to start using OpenSQL.AI", email)
+
+
+    // await brevoClient.sendEmail({
+    //     to: email,
+    //     subject: 'Verify Your Email',
+    //     html: `Please click on the link to verify your email: <a href="${verificationUrl}">Verify Email</a>`
+    // });
+};
+// sendVerificationEmail("kanzariyamihir@gmail.com", "aaaaa")
+
 module.exports = {
     createChunk,
     prepareArrayOfStringForFinetune,
     processDataset,
-    checkForInsertStatements
+    checkForInsertStatements,
+    sendVerificationEmail
 };

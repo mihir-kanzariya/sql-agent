@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { ApiKey } = require('../models'); // adjust path as needed
-
+const {sendVerificationEmail} = require("../helper/helper")
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { User, Model } = require('../models'); // adjust path as needed
@@ -107,33 +107,80 @@ const registerUser = async (req, res) => {
 
         // Hash the password
         const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-
+        
         // Create the user
         const user = await User.create({
             name: email?.split("@")[0] ,
             email,
             password: hashedPassword,
-            geography: geography || 'US'
-             // default geography
+            geography: geography || 'US',
+            // verificationToken,
+            // verified: false
+            // default geography
             // other user properties
         });
+        const verificationToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         await Model.create({
             name: 'default_opensql',
             user_id: user.id
         });
+        // console.log("Updating verifaction token")
+        // await User.update(
+        //     { verificationToken: verificationToken,verified: false },
+        //     { where: { id: user.id } }
+        //   )
+        // console.log("DONE: Updating verifaction token")
 
-        // Send verification email
+        user.verificationToken= verificationToken
+        user.verified= false
+
+        await user.save()
+
+        // Generate a verification token
+
+        // Sending the verification email using Brevo
+        let isSent = await sendVerificationEmail(email, verificationToken);
+
 
         // ... code to send verification email ...
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '6h' });
 
-        return res.status(201).json({ token, user, message: 'User registered successfully' });
+        return res.status(201).json({ token, user, message: 'User registered successfully', email: isSent });
     } catch (error) {
         console.error('Error registering user:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+const verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.query;
+        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("🚀 ~ verifyEmail ~ decoded:", decoded)
+
+        const user = await User.findByPk(decoded.userId);
+        if (!user) {
+            // return res.status(404).json({ message: 'User not found' });
+        return res.redirect(`http://localhost:3000?verified=false&msg=User not found`);
+
+        }
+
+        // Update user's verified status
+        user.verified = true;
+        user.verificationToken = null;
+        await user.save();
+
+        return res.redirect(`http://localhost:3000?verified=true&msg=success fully verifies`);
+        // res.redirect(`https://opensql.ai`);
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        return res.redirect(`http://localhost:3000?verified=false&msg=Invalid or expired token`);
+
+        return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+}
 
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
@@ -150,21 +197,29 @@ const loginUser = async (req, res) => {
     try {
         // Find the user by email
         const user = await User.findOne({ where: { email } });
+
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
         // Verify the password
         const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
         if (user.password !== hashedPassword) {
             return res.status(401).json({ message: 'Invalid password' });
         }
 
+        if (!user.verified) {
+            return res.status(401).json({ message: 'Verify Email.' });
+        }
+
+
         // Update lastLoggedInDate
         user.lastLoggedInDate = new Date();
         await user.save();
 
         // Generate JWT
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '6h' });
+        const token = jwt.sign({ userId: user.id, verified: user.verified }, process.env.JWT_SECRET, { expiresIn: '6h' });
         return res.json({ token, user });
     } catch (error) {
         console.error('Error logging in:', error);
@@ -231,6 +286,7 @@ module.exports = {
     callbackGoogleAuth,
     generateApiKey,
     registerUser,
-    loginUser
+    loginUser,
+    verifyEmail
 };
 

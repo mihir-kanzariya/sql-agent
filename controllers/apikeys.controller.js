@@ -10,9 +10,9 @@ const crypto = require('crypto');
 const getByUserId = async (req, res) => {
     try {
         const userId = req.user.userId;
-        console.log("🚀 ~ getByUserId ~ userId:", userId)
+        
 
-        const apiKeys = await ApiKey.findAll({ userId });
+        const apiKeys = await ApiKey.findAll({where: { user_id: userId }});
 
         // Write proper response when necessary
 
