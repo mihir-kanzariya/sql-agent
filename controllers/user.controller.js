@@ -163,7 +163,7 @@ const verifyEmail = async (req, res) => {
         const user = await User.findByPk(decoded.userId);
         if (!user) {
             // return res.status(404).json({ message: 'User not found' });
-        return res.redirect(`http://localhost:3000?verified=false&msg=User not found`);
+        return res.redirect(`${GOOGLE_REDIRECT_URI}?verified=false&msg=User not found`);
 
         }
 
@@ -172,11 +172,11 @@ const verifyEmail = async (req, res) => {
         user.verificationToken = null;
         await user.save();
 
-        return res.redirect(`http://localhost:3000?verified=true&msg=success fully verifies`);
+        return res.redirect(`${GOOGLE_REDIRECT_URI}?verified=true&msg=success fully verifies`);
         // res.redirect(`https://opensql.ai`);
     } catch (error) {
         console.error('Error verifying email:', error);
-        return res.redirect(`http://localhost:3000?verified=false&msg=Invalid or expired token`);
+        return res.redirect(`${GOOGLE_REDIRECT_URI}?verified=false&msg=Invalid or expired token`);
 
         return res.status(400).json({ message: 'Invalid or expired token' });
     }
