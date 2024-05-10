@@ -1,12 +1,12 @@
 require('dotenv').config();
 const { ApiKey } = require('../models'); // adjust path as needed
-const {sendVerificationEmail} = require("../helper/helper")
+const {sendVerificationEmail, sendEmail} = require("../helper/helper")
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { User, Model } = require('../models'); // adjust path as needed
 // const { generateKey } = require('crypto');
 const crypto = require('crypto');
-
+// const  = require("")
 
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -182,6 +182,83 @@ const verifyEmail = async (req, res) => {
     }
 }
 
+const resetPassword =  async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.trim() === '') {
+        return res.status(400).json({ message: 'Password cannot be empty' });
+    }
+
+    try {
+        // Verify and decode the JWT
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Find the user based on the decoded token ID
+        const user = await User.findOne({ where: { id: decoded.id } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Hash the new password
+        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+        // Update the user's password
+        await user.update({ password: hashedPassword, verificationToken: null });
+
+        res.json({ message: 'Your password has been successfully reset. Please log in with your new password.' });
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Reset token has expired, please request a new one.' });
+        } else if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: 'Invalid reset token. Please ensure you have the correct URL or request a new one.' });
+        }
+        console.error('Reset Password Error:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}
+  
+  const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+
+    // Validate the email
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: 'Valid email is required' });
+    }
+
+    try {
+        // Find the user by email
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) {
+            // Note: In production, you might want to avoid sending specific messages about email existence
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate a reset token with JWT
+        const resetToken = jwt.sign(
+            { id: user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' } // Token expires in 15 min
+        );
+
+        // Create reset URL (Adjust the URL as necessary for your front-end route)
+        const resetUrl = `${process.env.GOOGLE_REDIRECT_URI}/reset-password/${resetToken}`;
+
+        // Send the email
+        const emailSubject = 'Password Reset Request';
+        const emailBody = `You have requested a password reset. Please go to the following link to reset your password: <a href="${resetUrl}">Reset</a>`;
+
+        await sendEmail(emailBody, emailSubject, email);
+
+        res.json({ message: 'If your email address exists in our database, you will receive a password reset link shortly.' });
+    } catch (error) {
+        console.error('Error in forgotPassword:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
     // Validate email and password
@@ -287,6 +364,7 @@ module.exports = {
     generateApiKey,
     registerUser,
     loginUser,
-    verifyEmail
+    verifyEmail,
+    resetPassword, forgotPassword
 };
 

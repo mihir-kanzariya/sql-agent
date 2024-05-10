@@ -1502,5 +1502,6 @@ module.exports = {
     prepareArrayOfStringForFinetune,
     processDataset,
     checkForInsertStatements,
-    sendVerificationEmail
+    sendVerificationEmail,
+    sendEmail
 };

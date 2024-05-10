@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { callbackGoogleAuth, googleAuth, generateApiKey, registerUser, loginUser, verifyEmail } = require('../controllers/user.controller.js');
+const { callbackGoogleAuth, googleAuth, generateApiKey, registerUser, loginUser, verifyEmail, resetPassword, forgotPassword } = require('../controllers/user.controller.js');
 const { createModel, deleteModel, trainModel, ask, listAllModels, resetTrainingData, prepareFileForFineTune, askMySql } = require('../controllers/vector.controller.js');
 const {    getByUserId, getByApiKeyId, findAllByUserId, deleteByApiKeyId, updateByApiKeyId, createApiKey } = require('../controllers/apikeys.controller.js');
 const { presignedUrl, presignedUrlToRead } = require('../controllers/file.controller.js');
@@ -21,6 +21,9 @@ router.get('/auth/google/callback', callbackGoogleAuth);
 router.post('/user/apikey',verifyToken, generateApiKey );
 router.post('/register', registerUser );
 router.post('/login', loginUser );
+router.post('/reset-password/:token', resetPassword );
+router.post('/forgot-password', forgotPassword );
+
 router.get('/verify-email', verifyEmail)
 
 
