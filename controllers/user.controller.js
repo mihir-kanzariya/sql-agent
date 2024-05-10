@@ -51,7 +51,8 @@ const callbackGoogleAuth = async (req, res) => {
                 picture: profile.picture,
                 disable: false,
                 geography: geography || 'US',
-                lastLoggedInDate: new Date()
+                lastLoggedInDate: new Date(),
+                verified:true
             });
 
            let model =  await Model.create({
