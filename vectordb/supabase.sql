@@ -15,7 +15,8 @@ create table chatgpt (
   model_id bigint,
   embedding vector(1536),
   user_id bigint,
-  file_id bigint NULL
+  file_id bigint NULL,
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- RUN 2nd

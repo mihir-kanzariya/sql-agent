@@ -72,7 +72,7 @@ const callbackGoogleAuth = async (req, res) => {
         delete user.dataValues.password; // Remove password from the user object
 
         // Generate JWT
-        const token = jwt.sign({ userId: user.id,verified: user.verified }, process.env.JWT_SECRET, { expiresIn: '6h' });
+        const token = jwt.sign({ userId: user.id,verified: user.verified }, process.env.JWT_SECRET, { expiresIn: '15d' });
 
         return res.json({ token, user });
     } catch (error) {
@@ -145,7 +145,7 @@ const registerUser = async (req, res) => {
 
 
         // ... code to send verification email ...
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '6h' });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '15d' });
 
         return res.status(201).json({ token, user, message: 'User registered successfully', email: isSent });
     } catch (error) {
@@ -297,7 +297,7 @@ const loginUser = async (req, res) => {
         await user.save();
 
         // Generate JWT
-        const token = jwt.sign({ userId: user.id, verified: user.verified }, process.env.JWT_SECRET, { expiresIn: '6h' });
+        const token = jwt.sign({ userId: user.id, verified: user.verified }, process.env.JWT_SECRET, { expiresIn: '15d' });
         return res.json({ token, user });
     } catch (error) {
         console.error('Error logging in:', error);
