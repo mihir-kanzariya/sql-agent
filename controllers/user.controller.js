@@ -11,12 +11,11 @@ const crypto = require('crypto');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = process.env.NODE_ENV == 'development' ? `http://localhost:3000/auth/google/callback` : `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
 
-console.log("🚀 ~ NODE_ENV:", process.env.NODE_ENV)
-console.log("🚀 ~ GOOGLE_REDIRECT_URI:", GOOGLE_REDIRECT_URI)
 // Redirect user to Google's OAuth 2.0 server
 let googleAuth = (req, res) => {
+    const GOOGLE_REDIRECT_URI = process.env.NODE_ENV == 'development' ? `http://localhost:3000/auth/google/callback` : `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
+
     console.log("🚀 ~ User:", JSON.stringify(User, null, 2))
     console.log("🚀 ~ User:", User.findOne)
     const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile`;
@@ -24,6 +23,8 @@ let googleAuth = (req, res) => {
 }
 
 const callbackGoogleAuth = async (req, res) => {
+const GOOGLE_REDIRECT_URI = process.env.NODE_ENV == 'development' ? `http://localhost:3000/auth/google/callback` : `${process.env.GOOGLE_REDIRECT_URI}/auth/google/callback`;
+
     const { code, geography } = req.query;
     try {
         // Exchange code for tokens
@@ -157,6 +158,8 @@ const registerUser = async (req, res) => {
 const verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
+const NORMAL_REDIRECT_URI = process.env.NODE_ENV == 'development' ? `http://localhost:3000` : `${process.env.GOOGLE_REDIRECT_URI}`;
+
         
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log("🚀 ~ verifyEmail ~ decoded:", decoded)
@@ -164,7 +167,7 @@ const verifyEmail = async (req, res) => {
         const user = await User.findByPk(decoded.userId);
         if (!user) {
             // return res.status(404).json({ message: 'User not found' });
-        return res.redirect(`${GOOGLE_REDIRECT_URI}?verified=false&msg=User not found`);
+        return res.redirect(`${NORMAL_REDIRECT_URI}?verified=false&msg=User not found`);
 
         }
 
@@ -172,12 +175,12 @@ const verifyEmail = async (req, res) => {
         user.verified = true;
         user.verificationToken = null;
         await user.save();
-
-        return res.redirect(`${GOOGLE_REDIRECT_URI}?verified=true&msg=success fully verifies`);
+        console.log("NORMAL_REDIRECT_URI:", NORMAL_REDIRECT_URI)
+        return res.redirect(`${NORMAL_REDIRECT_URI}?verified=true&msg=success fully verifies`);
         // res.redirect(`https://opensql.ai`);
     } catch (error) {
         console.error('Error verifying email:', error);
-        return res.redirect(`${GOOGLE_REDIRECT_URI}?verified=false&msg=Invalid or expired token`);
+        return res.redirect(`${NORMAL_REDIRECT_URI}?verified=false&msg=Invalid or expired token`);
 
         return res.status(400).json({ message: 'Invalid or expired token' });
     }
