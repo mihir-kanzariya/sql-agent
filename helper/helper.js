@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const nodemailer = require("nodemailer");
 const axios = require('axios');
-const {verifyEmailTemplate}  = require("./verifyEmailTemplate")
+const { verifyEmailTemplate } = require("./verifyEmailTemplate")
 // import { getEncoding, encodingForModel } from "js-tiktoken";
 
 
@@ -18,30 +18,78 @@ let encoding = getEncoding("cl100k_base")
 
 
 async function createChunk(documentation, isSQL) {
-    // console.log("🚀 ~ createChunk ~ documentation:", documentation)
-
-    return documentation.map(ele => {   
-        
-        let contentToken =encoding.encode(ele.trim()).length
-
-        console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        console.log("🚀 ~ createChunk ~ ele:", ele)
-        console.log("🚀 ~ createChunk ~ Trimmedele:", ele.trim())
-        console.log("🚀 ~ createChunk ~ contentToken:", contentToken)
+    return documentation.map(ele => {
+        const content = ele.trim();
+        const contentToken = encoding.encode(content).length;
         return {
-            content: ele,
-            content_length: ele.length,
-            content_tokens:contentToken,
-            // trainingDataType
-        }
-    })
+            content,
+            content_length: content.length,
+            content_tokens: contentToken,
+        };
+    });
+}
+function splitIntoChunks(data, numChunks) {
+    const chunks = [];
+    const total = data.length;
+    const chunkSize = Math.ceil(total / numChunks);
 
+    for (let i = 0; i < total; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        chunks.push(chunk);
+    }
+
+    return chunks;
+}
+
+async function heavyLifting(chunk) {
+    return new Promise((resolve, reject) => {
+        try {
+            let processedData;
+
+            // Check if chunk is an array and process accordingly
+            if (Array.isArray(chunk)) {
+                processedData = chunk.map(item => ({
+                    original: item,
+                    transformed: `${item}`
+                }));
+            } else if (typeof chunk === 'string') {
+                // Handle string processing separately
+                processedData = `${chunk}`;
+            } else {
+                throw new TypeError('Expected chunk to be either an array or a string');
+            }
+
+            // Simulate some delay to represent heavy computation
+            setTimeout(() => resolve(processedData), 1000);
+        } catch (error) {
+            reject(`Failed to process due to: ${error}`);
+        }
+    });
+}
+
+async function processSchemaInParallel(schema) {
+    const parts = splitIntoChunks(schema, 10);  // Split schema into 10 parts
+    const promises = parts.map(part => heavyLifting(part));  // Process each part in parallel
+    const results = await Promise.all(promises);
+    return results.flat();
 }
 
 const prepareArrayOfStringForFinetune = async (schema) => {
-    console.log("BEFORE: >>>>",encoding.encode(schema.trim()).length)
-    filterNewLines = schema.replace(/^--.*$/gm, '').replace(/(\r\n|\n|\r)/gm, "");
-    console.log("AFTER: >>>>",encoding.encode(filterNewLines.trim()).length)
+    // console.log("BEFORE: >>>>", encoding.encode(schema.trim()).length)
+    // filterNewLines = schema.replace(/^--.*$/gm, '').replace(/(\r\n|\n|\r)/gm, "");
+    // console.log("AFTER: >>>>", encoding.encode(filterNewLines.trim()).length)
+
+        // Example of a more efficient string manipulation (this is hypothetical)
+        const cleanedSchema = schema.split('\n')
+            .filter(line => !line.startsWith('--'))  // Remove comments
+            .join(' ')
+            .replace(/\s+/g, ' ').trim();  // Normalize whitespace
+
+        // Hypothetical function that needs to process cleaned data
+        const filterNewLines = await processSchemaInParallel(cleanedSchema);  // Process in parallel if possible
+        console.log("🚀 ~ prepareArrayOfStringForFinetune ~ filterNewLines:", filterNewLines)
+
+    
 
     // let filterNewLines = 
 
@@ -656,13 +704,13 @@ ALTER TABLE ONLY person.stateprovince
                 RELATIONS: ["table1 has a foreign key to table2", "table2 has a foreign key to table3"],
                 SQL: [{
                     "question": "Create sample question,",
-                    "DDL": "plain SQL for the question, if schema is postgresql, include the schema name in query"
+                    "SQL": "plain SQL for the question, if schema is postgresql, include the schema name in query"
                 },{
                     "question": "Create sample question, this should include joining table query,",
-                    "DDL": "plain SQL for the question"
+                    "SQL": "plain SQL for the question"
                 }, {
                     "question": "Create sample question, this shouldinclude joining table query,",
-                    "DDL": "plain SQL for the question"
+                    "SQL": "plain SQL for the question"
                 }]
             }
 
@@ -735,7 +783,7 @@ ALTER TABLE ONLY person.stateprovince
                 `
             }, {
                 "role": "user",
-                "content": filterNewLines
+                "content": filterNewLines.join("\n")
             }
             ],
             temperature: 0.2,
@@ -747,7 +795,7 @@ ALTER TABLE ONLY person.stateprovince
         // console.log("🚀 ~ prepareArrayOfStringForFinetune ~ content:", content)
         // console.log("🚀 ~Type ~ content:", typeof content)
         let data = JSON.parse(content);
-        console.log(data); // Handle the response data here
+        // console.log(data); // Handle the response data here
         // console.log("Strngfy:",JSON.stringify(response.choices[1]?.message.content)); 
         // console.log("parse:",JSON.parse(`${response.choices[1]?.message.content}`).Relations?.length); 
         return data
@@ -760,37 +808,17 @@ ALTER TABLE ONLY person.stateprovince
 
 async function processDataset(dataset, modelId, userId, fileId) {
     try {
-        // const isSQL = trainingDataType === 'SQL'
-        // let docForSQL = []
-        // if (isSQL) {
-        //     docForSQL = documentation.map((doc) => `${doc.question} ${doc.DDL}`)
-        // }
-
-        // Create an array of promises, one for each key in the dataset
-        const promises = Object.entries(dataset).map(async ([key, data]) => {
-            try {
-                const isSQL = (key === 'SQL')
-                let docForSQL = []
-                if (isSQL) {
-                    docForSQL = data.map((doc) => `${doc.question} ${doc.DDL}`)
-                }
-                console.log("processDataset  > processDataset")
-                let chunks = await createChunk((isSQL ? docForSQL : data), isSQL)
-                // const chunks = await createChunk(data, false);
-                console.log("processDataset  > generateEmbeddings")
-
-                await generateEmbeddings(chunks, modelId, userId, key, data, fileId);
-            } catch (error) {
-                throw error;
-            }
+        const promises = Object.entries(dataset).map(([key, data]) => {
+            const isSQL = (key === 'SQL');
+            const docForSQL = isSQL ? data.map(doc => `${doc.question} ${doc.DDL}`) : [];
+            return createChunk(isSQL ? docForSQL : data, isSQL)
+                .then(chunks => generateEmbeddings(chunks, modelId, userId, key, data, fileId));
         });
 
-        // Wait for all promises to resolve
         await Promise.all(promises);
-        console.log('All requests completed successfully.');
     } catch (error) {
         console.error('Error:', error);
-        throw error; // Re-throw the error to be caught by the caller
+        throw error;
     }
 }
 
@@ -846,49 +874,49 @@ async function checkForInsertStatements(url) {
 
 const sendEmail = async (body, subject, to) => {
     try {
-    //   const { body, subject, to } = req.body;
-//   console.log(req.body, "!!!!!!req.body!!!!!!!")
-console.log("ENVS: ", process.env.SMTP_EMAIL)
-console.log("ENVS: ", process.env.SMTP_PASSWORD)
-      const transporter = nodemailer.createTransport({
-        host: "smtp-relay.brevo.com",
-        port: 587,
-        auth: {
-          user: process.env.SMTP_EMAIL,
-          pass: process.env.SMTP_PASSWORD,
-        },
-      });
-  
-      const html = body || "<h1>Test mail</h1>";
-  
-     await transporter.sendMail({
-        from: '"OpenSQL.AI" <no-reply@opensql.ai>',
-        to: to,
-        subject: subject || "pdfgpt.io",
-        html: html,
-      });
-      console.log("EMAIL SENT!!!")
-      return true
-    //   next({
-    //     status: StatusCodes.OK,
-    //     message: "Email has been sent!",
-    //   });
+        //   const { body, subject, to } = req.body;
+        //   console.log(req.body, "!!!!!!req.body!!!!!!!")
+        console.log("ENVS: ", process.env.SMTP_EMAIL)
+        console.log("ENVS: ", process.env.SMTP_PASSWORD)
+        const transporter = nodemailer.createTransport({
+            host: "smtp-relay.brevo.com",
+            port: 587,
+            auth: {
+                user: process.env.SMTP_EMAIL,
+                pass: process.env.SMTP_PASSWORD,
+            },
+        });
+
+        const html = body || "<h1>Test mail</h1>";
+
+        await transporter.sendMail({
+            from: '"OpenSQL.AI" <no-reply@opensql.ai>',
+            to: to,
+            subject: subject || "pdfgpt.io",
+            html: html,
+        });
+        console.log("EMAIL SENT!!!")
+        return true
+        //   next({
+        //     status: StatusCodes.OK,
+        //     message: "Email has been sent!",
+        //   });
     } catch (error) {
         return false
-      console.error(">>>>>",error);
-    //   next({
-    //     status: StatusCodes.INTERNAL_SERVER_ERROR,
-    //     message: "Internal Server Error",
-    //   });
+        console.error(">>>>>", error);
+        //   next({
+        //     status: StatusCodes.INTERNAL_SERVER_ERROR,
+        //     message: "Internal Server Error",
+        //   });
     }
-  };
+};
 const sendVerificationEmail = async (email, token) => {
     const verificationUrl = `https://api.opensql.ai/api/v1/verify-email?token=${token}`;
     // const verificationUrl = `https://api.opensql.ai/api/v1/verify-email?token=${token}`;
     // Use Brevo SDK or API to send the email
     // For example:
 
-    let body = verifyEmailTemplate({link: verificationUrl})
+    let body = verifyEmailTemplate({ link: verificationUrl })
     console.log("🚀 ~ sendVerificationEmail ~ body:", body)
     return await sendEmail(body, "Verify your email to start using OpenSQL.AI", email)
 

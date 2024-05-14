@@ -46,7 +46,7 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
 
         await Promise.all(embeddingResponse?.data.map(async (e) => {
             // console.log("🚀 ~ awaitPromise.all ~ e:", e)
-            // console.log(`docForSQL ${e.index} >>>`, docForSQL[e.index])
+            console.log(`docForSQL ${e.index} >>>`, docForSQL[e.index])
             // console.log("filterArr[e.index]?.content_tokens", filterArr[e.index]?.content_tokens)
             totalTokens = totalTokens + filterArr[e.index]?.content_tokens
             const insertData = {
