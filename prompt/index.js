@@ -4,7 +4,7 @@ function generateSQLPrompt(schema, relations, sql) {
     const SQLPrompt = `
     The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.
 
-    Respond with only SQL code. Do not answer with any explanations -- just the code.
+    Respond with only SQL code. Do not answer with any explanations -- just the code. No any markdown response. Do not create ay destructive query.
 
     You may use the following SCHEMA, RELATIONS, Sample SQL as a reference for what tables. relation, and example sql might be available. Use responses to past questions also to guide you:
     SCHEMA: ${schema}, 
@@ -15,6 +15,7 @@ function generateSQLPrompt(schema, relations, sql) {
     `;
     return SQLPrompt;
 }
+
 
 let sample = [
     {
