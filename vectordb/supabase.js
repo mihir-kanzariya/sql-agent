@@ -19,6 +19,7 @@ let totalTokens = 0
 
 
 async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType, docForSQL, fileId) {
+    // console.log("🚀 ~ generateEmbeddings ~ docForSQL:", docForSQL)
     try {
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_APIKEY
@@ -45,11 +46,12 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
 
         await Promise.all(embeddingResponse?.data.map(async (e) => {
             // console.log("🚀 ~ awaitPromise.all ~ e:", e)
+            // console.log(`docForSQL ${e.index} >>>`, docForSQL[e.index])
             // console.log("filterArr[e.index]?.content_tokens", filterArr[e.index]?.content_tokens)
             totalTokens = totalTokens + filterArr[e.index]?.content_tokens
             const insertData = {
                 question: trainingDataType === 'SQL' ? docForSQL[e.index]?.question : null,
-                content: trainingDataType === 'SQL' ? docForSQL[e.index].DDL.replace(/\r?\n|\r/g, ' ') : filterArr[e.index].content.replace(/\u0000/g, ' '),
+                content: trainingDataType === 'SQL' ? docForSQL[e.index]?.SQL.replace(/\r?\n|\r/g, ' ') : filterArr[e.index].content.replace(/\u0000/g, ' '),
                 content_length: filterArr[e.index]?.content_length || 0,
                 content_tokens: filterArr[e.index]?.content_tokens || 0,
                 embedding: e.embedding,
