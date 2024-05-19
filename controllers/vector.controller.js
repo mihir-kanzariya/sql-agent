@@ -323,8 +323,10 @@ const resetTrainingData = async (req, res) => {
 };
 
 const prepareFileForFineTune = async (req, res) => {    
+    
     try {
         const {  key, fileId } = req.query;
+        const log = `>>> ${req.user.userId}:${fileId} >>> `
     const userId = req.user.userId; 
     AWS.config.update({
         accessKeyId: process.env.WASABI_ACCESS_KEY,
@@ -343,7 +345,7 @@ const prepareFileForFineTune = async (req, res) => {
         });
 
         // Make GET request to the presigned URL
-        console.log("reading data from presigned URL")
+        console.log(`${log} :reading data from presigned URL`)
         let startTime = new Date();
         const response = await axios.get(presignedUrl, {
             timeout: 120000,       
@@ -351,12 +353,23 @@ const prepareFileForFineTune = async (req, res) => {
         }); 
         let EndTime = new Date();
         var seconds = (EndTime.getTime() - startTime.getTime()) / 1000;
-        console.log("Done: reading data from presigned URL took: ", seconds, " seconds")
+        console.log(`${log} : Done: reading data from presigned URL took: `, seconds, " seconds")
 
 
 
 
         let dataset = await prepareArrayOfStringForFinetune(response.data);
+        console.log(`${log} dataset`, dataset)
+        if (dataset?.SCHEMA.length == 0) {
+            console.log(`${log} Uploaded file does not contain table information. Please upload schema containing table information.`)
+            
+            return res.status(500).json({
+                status: 'error',
+                message: `Uploaded file does not contain table information. Please upload schema containing table information.`
+            });
+        }
+        
+
         // let dataset = {
         //     SCHEMA: [
         //       'tableName: department, columns: [departmentid, name, groupname, modifieddate]',
@@ -409,10 +422,10 @@ const prepareFileForFineTune = async (req, res) => {
         
 
         try {
-            console.log("processDataset")
+            console.log(`${log} processDataset`)
             await processDataset(dataset, modelId, userId, fileId);
         } catch (error) {
-            console.error('Error:', error);
+            console.error(` ${log} Error:`, error);
         }
         
         await Model.update({ active: true }, { where: { fileId, active: false } });
@@ -423,7 +436,7 @@ const prepareFileForFineTune = async (req, res) => {
             data: dataset?.SQL
         });
     } catch (error) {
-        console.error(error);
+        console.error(`${log} `,error);
         return res.status(500).json({
             status: 'error',
             message: 'Error preparing file for fine-tuning.',
@@ -437,6 +450,7 @@ const askMySql = async (req, res) => {
         const { question, fileId } = req.query;
         // console.log("🚀 ~ askMySql ~ fileId:", fileId)
         const userId = req.user.userId
+        const log = `<<< ${userId}:${fileId} >>>`
 
         // Validation for question
         if (!question || typeof question !== 'string') {
@@ -483,6 +497,8 @@ const askMySql = async (req, res) => {
         const messages = createChatMessages(SysPrompt, question, relatedSql);
         const sql = await generateSQL(SysPrompt, messages);
 
+        console.error(`${log} \n\n Question: ${question} \n sql: ${sql}`);
+
         return res.status(200).json({
             status: 'Success',
             data: { sql },
@@ -490,7 +506,7 @@ const askMySql = async (req, res) => {
         });
         
     } catch (error) {
-        console.error(error);
+        console.error(`${log}`, error);
         return res.status(500).json({
             status: 'error',
             message: 'Error retrieving similar items.',

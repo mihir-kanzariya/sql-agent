@@ -87,7 +87,7 @@ const prepareArrayOfStringForFinetune = async (schema) => {
 
         // Hypothetical function that needs to process cleaned data
         const filterNewLines = await processSchemaInParallel(cleanedSchema);  // Process in parallel if possible
-        console.log("🚀 ~ prepareArrayOfStringForFinetune ~ filterNewLines:", filterNewLines)
+        // console.log("🚀 ~ prepareArrayOfStringForFinetune ~ filterNewLines:", filterNewLines)
 
     
 
@@ -790,7 +790,11 @@ ALTER TABLE ONLY person.stateprovince
             // stream: true
         };
 
+        // console.log("Calling OpenAI API ")
+        // console.log("🚀 ~ prepareArrayOfStringForFinetune ~ requestBody:", requestBody)
         const response = await openai.chat.completions.create(requestBody);
+        // console.log("Done: Calling OpenAI API ")
+
         let content = response.choices[0]?.message.content;
         // console.log("🚀 ~ prepareArrayOfStringForFinetune ~ content:", content)
         // console.log("🚀 ~Type ~ content:", typeof content)
@@ -807,6 +811,9 @@ ALTER TABLE ONLY person.stateprovince
 }
 
 async function processDataset(dataset, modelId, userId, fileId) {
+    const log = `>>> ${userId}:${fileId} >>> `
+    console.log(`${log} processDataset`)
+
     try {
         const promises = Object.entries(dataset).map(([key, data]) => {
             const isSQL = (key === 'SQL');

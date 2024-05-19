@@ -19,7 +19,9 @@ let totalTokens = 0
 
 
 async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType, docForSQL, fileId) {
-    // console.log("🚀 ~ generateEmbeddings ~ docForSQL:", docForSQL)
+    const log = `>>> ${user_id}:${fileId} >>> `
+    console.log(`${log} generateEmbeddings`)
+    
     try {
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_APIKEY
@@ -37,7 +39,7 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
 
         const embeddingResponse = await openai.embeddings.create(reqObj);
 
-        console.log("🚀 ~ generateEmbeddings ~ embeddingResponse?.data?.usage:", embeddingResponse)
+        console.log(`${log} generateEmbeddings ~ Usage:`, embeddingResponse?.usage)
         tokensConsumed += embeddingResponse?.data?.usage?.prompt_tokens ?? 0;
         functionCalls += 1;
         totalReq++;
@@ -46,7 +48,7 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
 
         await Promise.all(embeddingResponse?.data.map(async (e) => {
             // console.log("🚀 ~ awaitPromise.all ~ e:", e)
-            console.log(`docForSQL ${e.index} >>>`, docForSQL[e.index])
+            console.log(`${log} docForSQL ${e.index} >>>`, docForSQL[e.index])
             // console.log("filterArr[e.index]?.content_tokens", filterArr[e.index]?.content_tokens)
             totalTokens = totalTokens + filterArr[e.index]?.content_tokens
             const insertData = {
@@ -67,13 +69,14 @@ async function generateEmbeddings(inputArr, model_id, user_id, trainingDataType,
                 .select('*');
 
             if (error) {
-                console.error("Error occurred during insertion:", error);
+                console.error(`${log} Error occurred during insertion:`, error);
                 return error
     
             }
         }));
+        console.log(`${log} SAVED`)
 
-        console.log("SAVED", totalTokens);
+        
         return "data";
     } catch (error) {
         console.error('Error generating embeddings:', error);
@@ -86,7 +89,7 @@ async function generateEmbeddingsForQuestion(query) {
     try {
         const input = query.replace(/\n/g, ' ');
         let contentToken =encoding.encode(input.trim()).length
-        console.log("🚀 ~ generateEmbeddingsForQuestion ~ contentToken:", contentToken)
+        // console.log("🚀 ~ generateEmbeddingsForQuestion ~ contentToken:", contentToken)
 
         const embedRes = await axios.post('https://api.openai.com/v1/embeddings', {
             model: 'text-embedding-ada-002',
@@ -97,7 +100,7 @@ async function generateEmbeddingsForQuestion(query) {
                 Authorization: `Bearer ${process.env.OPENAI_APIKEY}`
             }
         });
-        console.log("🚀 ~ generateEmbeddingsForQuestion ~ embedRes:", embedRes)
+        console.log("Usage:", embedRes?.data?.usage)
 
         const { embedding } = embedRes.data.data[0];
         return embedding
@@ -107,7 +110,9 @@ async function generateEmbeddingsForQuestion(query) {
 }
 
 async function similaritySearch(embedding, matches, modelId, userId, trainingDataType,fileId,  dbfuncenv) {
-    console.log("🚀 ~ similaritySearch ~ similaritySearch:", trainingDataType, fileId)
+    const log = `<<< ${userId}:${fileId} >>>`
+
+    console.log(`${log} similaritySearch:`, trainingDataType, fileId)
     try {
         // const input = query.replace(/\n/g, ' ');
         // const embedRes = await axios.post('https://api.openai.com/v1/embeddings', {
@@ -121,7 +126,7 @@ async function similaritySearch(embedding, matches, modelId, userId, trainingDat
         // });
 
         // const { embedding } = embedRes.data.data[0];
-    console.log("🚀 ~ similaritySearch ~ similaritySearch:", `chatgpt_search_${dbfuncenv}`)
+    console.log(`${log} similaritySearch chatgpt_search_${dbfuncenv}`)
 
         let supabaseParams = {
             fileid: fileId,
@@ -133,7 +138,9 @@ async function similaritySearch(embedding, matches, modelId, userId, trainingDat
             userid: userId
         }
         dbfuncenv == "api" && delete supabaseParams.fileid
-        console.log("🚀 ~ similaritySearch ~ dbfuncenv:", supabaseParams)
+        console.log(`${log} similaritySearchsupabaseParams `, supabaseParams)
+
+        
         const { data: chunks, error } = await supabaseClient.rpc(`chatgpt_search_${dbfuncenv}`, supabaseParams);
 
         // {
@@ -147,13 +154,13 @@ async function similaritySearch(embedding, matches, modelId, userId, trainingDat
         //   }
 
         if (error) {
-            console.error("SUPABSE Error:", JSON.stringify(error));
+            console.error(`${log} SUPABSE Error:`, JSON.stringify(error));
             return error;
         }
 
         return chunks;
     } catch (error) {
-        console.error(error);
+        console.error(`${log}`, error);
         return error;
     }
 }
@@ -175,11 +182,11 @@ async function generateSQL(prompt, messages) {
             temperature: 0.2,
             // stream: true
         };
-        console.log("🚀 ~ generateSQL ~ requestBody:", requestBody)
+        // console.log("🚀 ~ generateSQL ~ requestBody:", requestBody)
 
         const response = await openai.chat.completions.create(requestBody);
-        console.log("🚀 ~ generateSQL ~ response:", response)
-        console.log("🚀 ~ generateSQL ~ response.choices[0]:", response.choices[0])
+        console.log("🚀 ~ generateSQL ~ response:", response?.usage)
+        
 
         console.log(response.choices[0]?.message.content); // Handle the response data here
         return response.choices[0]?.message.content;
